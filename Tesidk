@@ -94,7 +94,7 @@ local function StartVoidlineFarm()
         if hum.SeatPart then
             pcall(function()
                 -- OTW POS B
-                VoidlineVehicleTween(POS_B, 5)
+                VoidlineVehicleTween(POS_B, 2)
                 task.wait(0.5)
 
                 -- Jika Cooldown terdeteksi di UI Money
@@ -104,7 +104,7 @@ local function StartVoidlineFarm()
                     task.wait(1)
                 else
                     -- Balik ke POS A
-                    VoidlineVehicleTween(POS_A, 5)
+                    VoidlineVehicleTween(POS_A, 2)
                     task.wait(0.5)
                 end
             end)

@@ -1,0 +1,123 @@
+-- [[ 🛡️ BYPASS ADONIS & NETWORK ]] --
+local genv = getgenv()
+local fenv = getfenv()
+
+-- Load bypass dari source yang lu kasih
+pcall(function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/LynX99-9/komtolmmek2/refs/heads/main/Adonis'))()
+    if game:GetService('CoreGui').RobloxGui:FindFirstChild('CoreScripts/NetworkPause') then
+        game:GetService('CoreGui').RobloxGui['CoreScripts/NetworkPause']:Destroy()
+    end
+end)
+
+-- [[ ⚙️ SETTINGS ]] --
+local LP = game:GetService("Players").LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local TS = game:GetService("TweenService")
+
+local POS_A = CFrame.new(80.019, -4.013, -872.866)
+local POS_B = CFrame.new(1300.53, -4.013, -867.006)
+local MOTOR_NAME = "Yamahax-MioSporty"
+
+genv.VoidlineAutoFarm = false
+
+-- [[ 🚀 QUADRA TWEEN SYSTEM ]] --
+local function VoidlineVehicleTween(targetCFrame, duration)
+    local char = LP.Character
+    local seat = char and char.Humanoid.SeatPart
+    if not seat then return end
+    
+    local car = seat.Parent
+    local primary = car.PrimaryPart or seat
+    local oldGravity = workspace.Gravity
+    
+    workspace.Gravity = 0
+    local tweenValue = Instance.new("CFrameValue")
+    tweenValue.Value = primary.CFrame
+    
+    local connection = tweenValue.Changed:Connect(function()
+        car:PivotTo(tweenValue.Value)
+    end)
+    
+    local tween = TS:Create(tweenValue, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Value = targetCFrame})
+    tween:Play()
+    tween.Completed:Wait()
+    
+    connection:Disconnect()
+    tweenValue:Destroy()
+    workspace.Gravity = oldGravity
+end
+
+-- [[ 🔄 EXECUTION ]] --
+local function StartVoidlineFarm()
+    local char = LP.Character
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    
+    -- 1. SPAWN 1 KALI
+    print("🌑 Voidline: Spawning...")
+    RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
+    task.wait(1.5)
+    
+    -- 2. TELEPORT KE DEPAN JOK & FIRE PROXIMITY
+    local motor = workspace:FindFirstChild("blog827383Montors_1772824873_8732")
+    if motor and motor:FindFirstChild("DriveSeat") then
+        local seat = motor.DriveSeat
+        hrp.CFrame = seat.CFrame * CFrame.new(0, 2, 2) -- TP Depan Jok
+        task.wait(0.3)
+        fireproximityprompt(seat:FindFirstChildOfClass("ProximityPrompt"))
+    end
+    
+    task.wait(1)
+    
+    -- 3. TWEEN BOLAK-BALIK NON-STOP
+    while genv.VoidlineAutoFarm do
+        pcall(function()
+            -- Ke Titik B
+            VoidlineVehicleTween(POS_B, 5)
+            task.wait(0.5)
+            -- Balik Ke Titik A
+            VoidlineVehicleTween(POS_A, 5)
+            task.wait(0.5)
+        end)
+        
+        -- Berhenti kalau toggle dimatikan
+        if not genv.VoidlineAutoFarm then break end
+    end
+end
+
+-- [[ 🎨 UI WINDUI ]] --
+local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()
+-- [[ disini taruh window ]] --
+local Window = WindUI:CreateWindow({
+    Title = "VoidlineHub",
+    Icon = "house", 
+    Author = "Bilzz",
+    Folder = "terserah",
+    Transparent = true,
+    Size = UDim2.fromOffset(300, 350),
+    Topbar = {
+        Height = 45,
+        ButtonsType = "Mac",
+    },
+    OpenButton = {
+        Enabled = true,
+        Title = "Drag Drive Simulator",
+        Draggable = true,
+        Color = ColorSequence.new(Color3.fromRGB(45, 90, 45), Color3.fromRGB(20, 50, 20))
+    }
+})
+
+local Tab = Window:Tab({ Title = "🏎️ Auto Farm", Icon = "zap" })
+
+Tab:Toggle({
+    Title = "Start Bolak-Balik",
+    Default = false,
+    Callback = function(v)
+        genv.VoidlineAutoFarm = v
+        if v then
+            task.spawn(StartVoidlineFarm)
+        end
+    end
+})
+
+WindUI:Notify({Title = "Voidline", Content = "Ready, Mek!"})

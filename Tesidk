@@ -21,6 +21,16 @@ local MOTOR_NAME = "Yamahax-MioSporty"
 
 genv.VoidlineAutoFarm = false
 
+-- [[ 🔍 MONEY COOLDOWN CHECKER ]] --
+local function IsOnCooldown()
+    local cashGui = LP.PlayerGui:FindFirstChild("CashDriving")
+    if cashGui and cashGui:FindFirstChild("CashLabel") then
+        local txt = cashGui.CashLabel.CashValue.Text:lower()
+        return string.find(txt, "cooldown") or string.find(txt, "wait")
+    end
+    return false
+end
+
 -- [[ 🚀 QUADRA TWEEN SYSTEM ]] --
 local function VoidlineVehicleTween(targetCFrame, duration)
     local char = LP.Character
@@ -50,49 +60,66 @@ end
 
 -- [[ 🔄 EXECUTION ]] --
 local function StartVoidlineFarm()
-    local char = LP.Character
-    local hrp = char:WaitForChild("HumanoidRootPart")
-    
-    -- 1. SPAWN 1 KALI
-    print("🌑 Voidline: Spawning...")
-    RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
-    task.wait(1.5)
-    
-    -- 2. TELEPORT KE DEPAN JOK & FIRE PROXIMITY
-    local motor = workspace:FindFirstChild("blog827383Montors_1772824873_8732")
-    if motor and motor:FindFirstChild("DriveSeat") then
-        local seat = motor.DriveSeat
-        hrp.CFrame = seat.CFrame * CFrame.new(0, 2, 2) -- TP Depan Jok
-        task.wait(0.3)
-        fireproximityprompt(seat:FindFirstChildOfClass("ProximityPrompt"))
-    end
-    
-    task.wait(1)
-    
-    -- 3. TWEEN BOLAK-BALIK NON-STOP
     while genv.VoidlineAutoFarm do
-        pcall(function()
-            -- Ke Titik B
-            VoidlineVehicleTween(POS_B, 5)
-            task.wait(0.5)
-            -- Balik Ke Titik A
-            VoidlineVehicleTween(POS_A, 5)
-            task.wait(0.5)
-        end)
-        
-        -- Berhenti kalau toggle dimatikan
-        if not genv.VoidlineAutoFarm then break end
+        local char = LP.Character
+        local hum = char:WaitForChild("Humanoid")
+        local hrp = char:WaitForChild("HumanoidRootPart")
+
+        -- 1. SPAWN & FORCE TELEPORT KE YAMAHA
+        if not hum.SeatPart then
+            print("🌑 Voidline: Spawning & Boarding Yamaha...")
+            RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
+            task.wait(1.2)
+            
+            -- Cari motor spesifik/motor lu di workspace
+            local motor = nil
+            for _, v in pairs(workspace:GetChildren()) do
+                if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
+                    motor = v
+                    break
+                end
+            end
+            
+            if motor then
+                local seat = motor.DriveSeat
+                -- Langsung TP ke jok tanpa tapi
+                hrp.CFrame = seat.CFrame * CFrame.new(0, 1, 0)
+                task.wait(0.2)
+                fireproximityprompt(seat:FindFirstChildOfClass("ProximityPrompt"))
+                task.wait(0.8)
+            end
+        end
+
+        -- 2. TWEEN BOLAK-BALIK + COOLDOWN AUTO-RESPAWN
+        if hum.SeatPart then
+            pcall(function()
+                -- OTW POS B
+                VoidlineVehicleTween(POS_B, 5)
+                task.wait(0.5)
+
+                -- Jika Cooldown terdeteksi di UI Money
+                if IsOnCooldown() then
+                    warn("⚠️ Voidline: Money Limit! Respawning...")
+                    hum.Jump = true -- Lompat biar script spawn ulang
+                    task.wait(1)
+                else
+                    -- Balik ke POS A
+                    VoidlineVehicleTween(POS_A, 5)
+                    task.wait(0.5)
+                end
+            end)
+        end
+        task.wait(0.5)
     end
 end
 
 -- [[ 🎨 UI WINDUI ]] --
 local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()
--- [[ disini taruh window ]] --
 local Window = WindUI:CreateWindow({
     Title = "VoidlineHub",
     Icon = "house", 
     Author = "Bilzz",
-    Folder = "terserah",
+    Folder = "Voidline_DragDrive",
     Transparent = true,
     Size = UDim2.fromOffset(300, 350),
     Topbar = {
@@ -120,4 +147,4 @@ Tab:Toggle({
     end
 })
 
-WindUI:Notify({Title = "Voidline", Content = "Ready, Mek!"})
+WindUI:Notify({Title = "Voidline", Content = "Script Ready, Gas Mek!"})

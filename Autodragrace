@@ -101,7 +101,7 @@ local function StartAutoRace()
             end
 
             -- 6. Delay Race (10 Detik)
-            task.wait(12)
+            task.wait(16)
 
             -- 7. Quadra Racing Loop
             if myMotor and hum.SeatPart then
@@ -130,9 +130,9 @@ local Window = WindUI:CreateWindow({
     Size = UDim2.fromOffset(400, 350)
 })
 
-local Tab = Window:Tab({ Title = "Racing", Icon = "zap", Selected = true })
+local AutoFarmTab = Window:Tab({ Title = "Racing", Icon = "zap", Selected = true })
 
-Tab:Toggle({
+AutoFarmTab:Toggle({
     Title = "Enable Auto Race",
     Callback = function(v)
         genv.VoidlineAutoRace = v
@@ -144,7 +144,7 @@ Tab:Toggle({
     end
 })
 
-Tab:Slider({
+AutoFarmTab:Slider({
     Title = "Speed Control (KM/H)",
     Value = { Min = 50, Max = 500, Default = 250 },
     Callback = function(v) 

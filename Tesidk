@@ -60,8 +60,18 @@ end
 local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()
 local Window = WindUI:CreateWindow({
     Title = "VoidlineHub",
+    Icon = "house", 
     Author = "Bilzz",
-    Size = UDim2.fromOffset(450, 420)
+    Folder = "Voidline_Configs",
+    Transparent = true,
+    Size = UDim2.fromOffset(300, 350), -- Digedein dikit biar gak sempit
+    Topbar = { Height = 45, ButtonsType = "Mac" },
+    OpenButton = {
+        Enabled = true,
+        Title = "DragDrive simulator",
+        Draggable = true,
+        Color = ColorSequence.new(Color3.fromRGB(45, 90, 45), Color3.fromRGB(20, 50, 20))
+    }
 })
 
 -- [[ 🏎️ TAB MAIN ]] --

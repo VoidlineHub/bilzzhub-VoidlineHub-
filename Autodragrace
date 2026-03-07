@@ -7,20 +7,32 @@ pcall(function()
     end
 end)
 
+
 -- [[ 🎨 LOAD UI LIBRARY ]] --
 local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()
 
--- [[ ⚙️ CONFIG & DATA ]] --
+-- [[ ⚙️ SETTINGS ]] --
 local LP = game:GetService("Players").LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
 local TS = game:GetService("TweenService")
 
-local HITBOX_START = CFrame.new(590.885864, -3.60543203, -1208.06238)
-local MOTOR_NAME = "Yamahax-MioSporty"
-genv.VoidlineAutoRace = false
+genv.VoidlineAutoFarm = false
+genv.VoidlineAutoRace = false 
 genv.VoidlineSpeed = 250 
-local EXTREME_LOW_Y = -4.50
 
+local RESET_INTERVAL = 7 * 60 
+local StartRP = 0 -- Fix nama variabel
+local StartTime = 0
+local CurrentEarning = 0
+local EXTREME_LOW_Y = -4.50
+local MOTOR_NAME = "Yamahax-MioSporty"
+local HITBOX_START = CFrame.new(590.885864, EXTREME_LOW_Y, -1208.06238)
+
+-- [[ kordinat drag ]] --
+local POS_A = CFrame.new(80.019, EXTREME_LOW_Y, -872.866)
+local POS_B = CFrame.new(1300.53, EXTREME_LOW_Y, -867.006)
+
+-- [[ kordinat sentul ]] --
 local SentulCheckpoints = {
     CFrame.new(681.73, EXTREME_LOW_Y, -1207.62), CFrame.new(1200.25, EXTREME_LOW_Y, -1207.90),
     CFrame.new(1701.97, EXTREME_LOW_Y, -1073.25), CFrame.new(1723.06, EXTREME_LOW_Y, -562.64),
@@ -32,34 +44,51 @@ local SentulCheckpoints = {
     CFrame.new(-404.35, EXTREME_LOW_Y, -984.11), CFrame.new(-546.41, EXTREME_LOW_Y, -979.99),
     CFrame.new(-1669.74, EXTREME_LOW_Y, -761.15), CFrame.new(-1795.42, EXTREME_LOW_Y, -780.42),
     CFrame.new(-1845.05, EXTREME_LOW_Y, -959.68), CFrame.new(-1684.81, EXTREME_LOW_Y, -1189.43),
-    CFrame.new(-1200.07, EXTREME_LOW_Y, -1208.09),CFrame.new(681.73, EXTREME_LOW_Y, -1207.62)
+    CFrame.new(-1200.07, EXTREME_LOW_Y, -1208.09), CFrame.new(681.73, EXTREME_LOW_Y, -1207.62)
 }
 
--- [[ 🚀 TWEEN SYSTEM ]] --
-local function tweenToPosition(car, endCFrame)
-    if not car or not car.Parent then return end
-    local startCFrame = car:GetPivot()
-    local distance = (startCFrame.p - endCFrame.p).Magnitude
-    local duration = distance / (genv.VoidlineSpeed / 1.5) 
+-- [[ 💰 FUNGSI FORMAT RP ]] --
+local function formatRP(p2)
+    local v3, v4, v5 = string.match(tostring(p2), "^([^%d]*%d)(%d*)(.-)$")
+    if v3 and (v4 and v5) then
+        return "Rp " .. v3 .. v4:reverse():gsub("(%d%d%d)", "%1,"):reverse() .. v5
+    else
+        return "Rp " .. tostring(p2)
+    end
+end
+
+-- [[ 🚀 UNIVERSAL TWEEN SYSTEM ]] --
+local function VoidlineTween(targetCFrame)
+    local char = LP.Character
+    local hum = char and char:FindFirstChild("Humanoid")
+    local car = hum and hum.SeatPart and hum.SeatPart.Parent
+    if not car then return end
+
+    local distance = (car:GetPivot().p - targetCFrame.p).Magnitude
+    local duration = distance / (genv.VoidlineSpeed / 1.5)
     
     local tweenValue = Instance.new("CFrameValue")
-    tweenValue.Value = startCFrame
-
+    tweenValue.Value = car:GetPivot()
+    
     local connection = tweenValue.Changed:Connect(function()
         if car and car.Parent then
-            car:PivotTo(tweenValue.Value)
+            local cur = tweenValue.Value
+            -- FIX: Ganti LOW_Y jadi EXTREME_LOW_Y
+            car:PivotTo(CFrame.new(cur.X, EXTREME_LOW_Y, cur.Z) * cur.Rotation)
         end
     end)
-
-    local tween = TS:Create(tweenValue, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Value = endCFrame})
+    
+    local tween = TS:Create(tweenValue, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Value = targetCFrame})
+    workspace.Gravity = 0
     tween:Play()
     tween.Completed:Wait()
     
     connection:Disconnect()
     tweenValue:Destroy()
+    workspace.Gravity = 196.2
 end
 
--- [[ 🏎️ MAIN AUTO RACE ]] --
+-- [[ 🏎️ LOGIC: SENTUL RACE ]] --
 local function StartAutoRace()
     while genv.VoidlineAutoRace do
         pcall(function()
@@ -68,10 +97,9 @@ local function StartAutoRace()
             local hrp = char:WaitForChild("HumanoidRootPart")
             local myMotor = nil
 
-            -- 1. VALIDASI MOTOR (Tetap di motor atau Spawn Baru)
             if hum.SeatPart and (hum.SeatPart.Parent.Name:find("blog827383") or hum.SeatPart.Parent.Name:find("Montors")) then
                 myMotor = hum.SeatPart.Parent
-                myMotor:PivotTo(HITBOX_START) -- Force Teleport Motor ke Start
+                myMotor:PivotTo(HITBOX_START)
                 task.wait(0.5)
             else
                 hrp.CFrame = HITBOX_START
@@ -89,60 +117,149 @@ local function StartAutoRace()
                 end
             end
             
-            -- 2. PREP DELAY (20s)
             task.wait(20)
 
-            -- 3. FIRE CLICKDETECTOR (Cari yang terbaru di motor lu)
             if myMotor then
                 local cd = myMotor:FindFirstChild("ClickDetector", true)
                 if cd then fireclickdetector(cd) end
             end
 
-            -- 4. RACE DELAY (16s)
             task.wait(16)
 
-            -- 5. RACING EXECUTION
             if myMotor and hum.SeatPart then
-                workspace.Gravity = 0
                 for _, cp in ipairs(SentulCheckpoints) do
                     if not genv.VoidlineAutoRace then break end
-                    tweenToPosition(myMotor, cp)
+                    VoidlineTween(cp) -- FIX: Nama fungsi dibenerin
                 end
-                workspace.Gravity = 196.2
-                
-                -- Force balik ke Start setelah Checkpoint terakhir
                 task.wait(1)
                 myMotor:PivotTo(HITBOX_START)
             end
-
-            task.wait(2) -- Cooldown antar ronde
+            task.wait(2)
         end)
         if not genv.VoidlineAutoRace then break end
     end
 end
 
--- [[ 🎨 UI ]] --
+-- [[ 🏎️ LOGIC: AUTO DRAG ]] --
+local function StartVoidlineFarm()
+    local lastReset = tick()
+    while genv.VoidlineAutoFarm do
+        pcall(function() -- Tambahin pcall biar aman
+            local char = LP.Character
+            local hum = char:WaitForChild("Humanoid")
+            local hrp = char:WaitForChild("HumanoidRootPart")
+
+            if tick() - lastReset >= RESET_INTERVAL or not hum.SeatPart then
+                if hum.SeatPart then hum.Jump = true task.wait(0.5) end
+                RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
+                task.wait(2)
+                for _, v in pairs(workspace:GetChildren()) do
+                    if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
+                        hrp.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 1.5, 0)
+                        task.wait(0.5)
+                        fireproximityprompt(v.DriveSeat:FindFirstChildOfClass("ProximityPrompt"))
+                        break
+                    end
+                end
+                lastReset = tick()
+            end
+
+            if hum.SeatPart then
+                VoidlineTween(POS_B) -- FIX: Nama fungsi dibenerin
+                task.wait(0.5)
+                VoidlineTween(POS_A) -- FIX: Nama fungsi dibenerin
+                task.wait(0.5)
+            end
+        end)
+        task.wait(0.1)
+    end
+end
+
+-- [[ 🎨 UI WINDOW ]] --
 local Window = WindUI:CreateWindow({
     Title = "VoidlineHub",
-    Icon = "flag", 
+    Icon = "house", 
     Author = "Bilzz",
-    Size = UDim2.fromOffset(400, 350)
+    Folder = "Voidline_Configs",
+    Transparent = true,
+    Size = UDim2.fromOffset(450, 400), -- Digedein dikit biar gak sempit
+    Topbar = { Height = 45, ButtonsType = "Mac" },
+    OpenButton = {
+        Enabled = true,
+        Title = "Voidline Hub",
+        Draggable = true,
+        Color = ColorSequence.new(Color3.fromRGB(45, 90, 45), Color3.fromRGB(20, 50, 20))
+    }
 })
 
-local RaceTab = Window:Tab({ Title = "Racing", Icon = "zap", Selected = true })
+local Tab = Window:Tab({ Title = "Auto Farm", Icon = "zap", Selected = true })
 
-RaceTab:Toggle({
-    Title = "Enable Auto Race",
+Tab:Section({ Title = "Smart Farm & Race" })
+
+Tab:Toggle({
+    Title = "Start Smart Drag (POS A-B)",
     Callback = function(v)
-        genv.VoidlineAutoRace = v
-        if v then task.spawn(StartAutoRace) else workspace.Gravity = 196.2 end
+        genv.VoidlineAutoFarm = v
+        if v then task.spawn(StartVoidlineFarm) end
     end
 })
 
-RaceTab:Slider({
-    Title = "Speed Control (KM/H)",
+Tab:Toggle({
+    Title = "Start Auto Sentul Race",
+    Callback = function(v)
+        genv.VoidlineAutoRace = v
+        if v then task.spawn(StartAutoRace) end
+    end
+})
+
+Tab:Slider({
+    Title = "Global Speed Control",
     Value = { Min = 50, Max = 500, Default = 250 },
     Callback = function(v) genv.VoidlineSpeed = v end
 })
 
-WindUI:Notify({Title = "Voidline", Content = "Fix Loop Active. Gaspol Mek!"})
+-- [[ 📊 DASHBOARD ]] --
+local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "trending-up" })
+StatsTab:Section({ Title = "Live Statistics" })
+
+local TimeBtn = StatsTab:Button({ Title = "Running Time", Desc = "00:00:00", Icon = "clock" })
+local EarningBtn = StatsTab:Button({ Title = "Total Earning", Desc = "Rp 0", Icon = "banknote" })
+local MoneyBtn = StatsTab:Button({ Title = "Current Money", Desc = "Rp 0", Icon = "wallet" })
+local SysBtn = StatsTab:Button({ Title = "System Status", Desc = "FPS: 0 | Ping: 0ms", Icon = "monitor" })
+
+-- [[ 🔄 REFRESHER ]] --
+task.spawn(function()
+    while true do
+        task.wait(1) 
+        pcall(function()
+            local PlayerData = LP:FindFirstChild("PlayerData")
+            if not PlayerData then return end
+            
+            local CurrentRP = PlayerData.RPValue.Value 
+            
+            if genv.VoidlineAutoFarm or genv.VoidlineAutoRace then
+                if StartRP == 0 then 
+                    StartRP = CurrentRP
+                    StartTime = tick()
+                end
+                CurrentEarning = CurrentRP - StartRP
+                
+                local diff = tick() - StartTime
+                local h, m, s = math.floor(diff/3600), math.floor((diff%3600)/60), math.floor(diff%60)
+                
+                TimeBtn:SetDesc(string.format("%02d:%02d:%02d", h, m, s))
+                EarningBtn:SetDesc(formatRP(CurrentEarning))
+            else
+                StartRP = 0
+            end
+            
+            MoneyBtn:SetDesc(formatRP(CurrentRP))
+            
+            local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
+            local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+            SysBtn:SetDesc("FPS: " .. fps .. " | Ping: " .. ping .. "ms")
+        end)
+    end
+end)
+
+WindUI:Notify({Title = "Voidline", Content = "Script Fixed & Ready!"})

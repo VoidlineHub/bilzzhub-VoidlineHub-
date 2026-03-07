@@ -154,7 +154,7 @@ Tab:Slider({
     Title = "Speed (KM/H)",
     Desc = "Pakai senormalnya aja",
     IsTooltip = true,
-    IsTextbox = false,
+    IsTextbox = true,
     Step = 1,
     Value = {
         Min = 0,

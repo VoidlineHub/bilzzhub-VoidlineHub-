@@ -211,7 +211,7 @@ local Window = WindUI:CreateWindow({
 })
 
 -- [[ 🏎️ TAB AUTO FARM ]] --
-local Tab = Window:Tab({ 
+local AutoFarmTab = Window:Tab({ 
     Title = "Auto Farm", 
     Icon = "zap",
     Selected = true -- WAJIB: Biar isinya langsung nampil
@@ -219,7 +219,7 @@ local Tab = Window:Tab({
 
 local EconSection = Tab:Section({ Title = "auto drag race" })
 -- [[ LANJUTIN TOGGLE & SLIDER DI BAWAH SINI ]] --
-Tab:Toggle({
+AutoFarmTab:Toggle({
     Title = "Start Smart Farm",
 Desc = "ini paling gacor si",
     Default = false,
@@ -229,7 +229,7 @@ Desc = "ini paling gacor si",
     end
 })
 
-Tab:Slider({
+AutoFarmTab:Slider({
     Title = "Speed (KM/H)",
     Desc = "Pakai senormalnya aja",
     IsTooltip = true,
@@ -245,6 +245,21 @@ Tab:Slider({
     end
 })
 
+AutoFarmTab:Toggle({
+    Title = "Enable Auto Race",
+    Desc = "semua sudah auto",
+    Callback = function(v)
+        genv.VoidlineAutoRace = v
+        if v then task.spawn(StartAutoRace) else workspace.Gravity = 196.2 end
+    end
+})
+
+AutoFarmTab:Slider({
+    Title = "Speed Control (KM/H)",
+    Desc = "400 normal",
+    Value = { Min = 50, Max = 500, Default = 250 },
+    Callback = function(v) genv.VoidlineSpeed = v end
+})
 
 -- [[ 📊 TAB DASHBOARD ]] --
 local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "trending-up", Selected = false })

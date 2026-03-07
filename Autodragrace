@@ -204,6 +204,7 @@ Tab:Toggle({
     end
 })
 
+Tab:Section({ Title = "auto race" })
 Tab:Toggle({
     Title = "Start Auto Sentul Race",
     Callback = function(v)

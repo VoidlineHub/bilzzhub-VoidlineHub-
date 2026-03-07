@@ -217,7 +217,7 @@ local AutoFarmTab = Window:Tab({
     Selected = true -- WAJIB: Biar isinya langsung nampil
 })
 
-local EconSection = Tab:Section({ Title = "auto drag race" })
+local EconSection = AutoFarmTab:Section({ Title = "auto drag race" })
 -- [[ LANJUTIN TOGGLE & SLIDER DI BAWAH SINI ]] --
 AutoFarmTab:Toggle({
     Title = "Start Smart Farm",

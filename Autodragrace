@@ -19,19 +19,20 @@ local HITBOX_START = CFrame.new(590.885864, -3.60543203, -1208.06238)
 local MOTOR_NAME = "Yamahax-MioSporty"
 genv.VoidlineAutoRace = false
 genv.VoidlineSpeed = 250 
+local EXTREME_LOW_Y = -4.50
 
 local SentulCheckpoints = {
-    CFrame.new(681.73, SAFE_Y, -1207.62), CFrame.new(1200.25, SAFE_Y, -1207.90),
-    CFrame.new(1701.97, SAFE_Y, -1073.25), CFrame.new(1723.06, SAFE_Y, -562.64),
-    CFrame.new(1848.16, SAFE_Y, -204.95), CFrame.new(3237.86, SAFE_Y, 768.42),
-    CFrame.new(3430.91, SAFE_Y, 993.99), CFrame.new(3191.61, SAFE_Y, 1241.81),
-    CFrame.new(2369.18, SAFE_Y, 378.68), CFrame.new(1459.46, SAFE_Y, -153.81),
-    CFrame.new(1430.42, SAFE_Y, -347.64), CFrame.new(1328.40, SAFE_Y, -468.94),
-    CFrame.new(-96.96, SAFE_Y, -515.90), CFrame.new(-249.54, SAFE_Y, -646.09),
-    CFrame.new(-404.35, SAFE_Y, -984.11), CFrame.new(-546.41, SAFE_Y, -979.99),
-    CFrame.new(-1669.74, SAFE_Y, -761.15), CFrame.new(-1795.42, SAFE_Y, -780.42),
-    CFrame.new(-1845.05, SAFE_Y, -959.68), CFrame.new(-1684.81, SAFE_Y, -1189.43),
-    CFrame.new(-1200.07, SAFE_Y, -1208.09), CFrame.new(681.73, SAFE_Y, -1207.62),
+    CFrame.new(681.73, EXTREME_LOW_Y, -1207.62), CFrame.new(1200.25, EXTREME_LOW_Y, -1207.90),
+    CFrame.new(1701.97, EXTREME_LOW_Y, -1073.25), CFrame.new(1723.06, EXTREME_LOW_Y, -562.64),
+    CFrame.new(1848.16, EXTREME_LOW_Y, -204.95), CFrame.new(3237.86, EXTREME_LOW_Y, 768.42),
+    CFrame.new(3430.91, EXTREME_LOW_Y, 993.99), CFrame.new(3191.61, EXTREME_LOW_Y, 1241.81),
+    CFrame.new(2369.18, EXTREME_LOW_Y, 378.68), CFrame.new(1459.46, EXTREME_LOW_Y, -153.81),
+    CFrame.new(1430.42, EXTREME_LOW_Y, -347.64), CFrame.new(1328.40, EXTREME_LOW_Y, -468.94),
+    CFrame.new(-96.96, EXTREME_LOW_Y, -515.90), CFrame.new(-249.54, EXTREME_LOW_Y, -646.09),
+    CFrame.new(-404.35, EXTREME_LOW_Y, -984.11), CFrame.new(-546.41, EXTREME_LOW_Y, -979.99),
+    CFrame.new(-1669.74, EXTREME_LOW_Y, -761.15), CFrame.new(-1795.42, EXTREME_LOW_Y, -780.42),
+    CFrame.new(-1845.05, EXTREME_LOW_Y, -959.68), CFrame.new(-1684.81, EXTREME_LOW_Y, -1189.43),
+    CFrame.new(-1200.07, EXTREME_LOW_Y, -1208.09),CFrame.new(681.73, EXTREME_LOW_Y, -1207.62)
 }
 
 -- [[ 🚀 TWEEN SYSTEM ]] --

@@ -1,8 +1,5 @@
 -- [[ 🛡️ BYPASS ADONIS & NETWORK ]] --
 local genv = getgenv()
-local fenv = getfenv()
-
--- Load bypass dari source yang lu kasih
 pcall(function()
     loadstring(game:HttpGet('https://raw.githubusercontent.com/LynX99-9/komtolmmek2/refs/heads/main/Adonis'))()
     if game:GetService('CoreGui').RobloxGui:FindFirstChild('CoreScripts/NetworkPause') then
@@ -21,9 +18,9 @@ local TS = game:GetService("TweenService")
 local HITBOX_START = CFrame.new(590.885864, -3.60543203, -1208.06238)
 local MOTOR_NAME = "Yamahax-MioSporty"
 genv.VoidlineAutoRace = false
-genv.VoidlineSpeed = 250 -- Default KM/H
+genv.VoidlineSpeed = 250 
 
--- Tabel Koordinat (Sentul Track)
+-- Checkpoints dengan Tinggi (Y) Rendah agar aman
 local SentulCheckpoints = {
     CFrame.new(681.73, 3.76, -1207.62), CFrame.new(1200.25, 3.76, -1207.90),
     CFrame.new(1701.97, 3.76, -1073.25), CFrame.new(1723.06, 3.76, -562.64),
@@ -35,20 +32,18 @@ local SentulCheckpoints = {
     CFrame.new(-404.35, 3.76, -984.11), CFrame.new(-546.41, 3.76, -979.99),
     CFrame.new(-1669.74, 3.76, -761.15), CFrame.new(-1795.42, 3.76, -780.42),
     CFrame.new(-1845.05, 3.76, -959.68), CFrame.new(-1684.81, 3.76, -1189.43),
-    CFrame.new(-1200.07, 3.76, -1208.09), CFrame.new(681.73, 3.76, -1207.62),
-
+    CFrame.new(-1200.07, 3.76, -1208.09),CFrame.new(681.73, 3.76, -1207.62)
 }
 
 -- [[ 🚀 QUADRA TWEEN SYSTEM ]] --
-local function tweenToPosition(car, startCFrame, endCFrame)
+local function tweenToPosition(car, endCFrame)
+    local startCFrame = car:GetPivot()
     local distance = (startCFrame.p - endCFrame.p).Magnitude
-    -- Kalkulasi durasi berdasarkan slider (Speed KM/H)
     local duration = distance / (genv.VoidlineSpeed / 1.5) 
     
     local tweenValue = Instance.new("CFrameValue")
     tweenValue.Value = startCFrame
 
-    -- Sistem Quadra: Update posisi via Changed Signal
     local connection = tweenValue.Changed:Connect(function()
         if car and car.Parent then
             car:PivotTo(tweenValue.Value)
@@ -68,56 +63,55 @@ local function StartAutoRace()
     while genv.VoidlineAutoRace do
         pcall(function()
             local char = LP.Character
-            local hrp = char:WaitForChild("HumanoidRootPart")
             local hum = char:WaitForChild("Humanoid")
-
-            -- 1. Teleport ke Hitbox
-            hrp.CFrame = HITBOX_START
-            task.wait(1)
-
-            -- 2. Spawn Motor
-            RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
-            task.wait(2.5)
-
-            -- 3. Cari Motor & Naik
+            local hrp = char:WaitForChild("HumanoidRootPart")
             local myMotor = nil
-            for _, v in pairs(workspace:GetChildren()) do
-                if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
-                    myMotor = v
-                    hrp.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 1.5, 0)
-                    task.wait(0.5)
-                    fireproximityprompt(v.DriveSeat:FindFirstChildOfClass("ProximityPrompt"))
-                    break
+
+            -- 1. CEK APAKAH SUDAH DI MOTOR
+            if hum.SeatPart and (hum.SeatPart.Parent.Name:find("blog827383") or hum.SeatPart.Parent.Name:find("Montors")) then
+                myMotor = hum.SeatPart.Parent
+                -- Balik ke hitbox start dalam keadaan tetap di motor
+                myMotor:PivotTo(HITBOX_START)
+            else
+                -- Teleport Karakter & Spawn Baru (Hanya jika belum naik motor)
+                hrp.CFrame = HITBOX_START
+                task.wait(1)
+                RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
+                task.wait(2.5)
+                for _, v in pairs(workspace:GetChildren()) do
+                    if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
+                        myMotor = v
+                        hrp.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 1.5, 0)
+                        task.wait(0.5)
+                        fireproximityprompt(v.DriveSeat:FindFirstChildOfClass("ProximityPrompt"))
+                        break
+                    end
                 end
             end
             
-            -- 4. Delay Prep (20 Detik)
+            -- 2. PREP & CLICK
             task.wait(20)
-
-            -- 5. Fire ClickDetector
             local detektor = workspace:FindFirstChild("blog827383Montors_1772863228_8193", true)
             if detektor then
                 local targetClick = detektor:FindFirstChild("ClickDetector", true)
                 if targetClick then fireclickdetector(targetClick) end
             end
 
-            -- 6. Delay Race (10 Detik)
+            -- 3. RACING
             task.wait(16)
-
-            -- 7. Quadra Racing Loop
             if myMotor and hum.SeatPart then
                 workspace.Gravity = 0
                 for _, cp in ipairs(SentulCheckpoints) do
                     if not genv.VoidlineAutoRace then break end
-                    -- Kirim posisi awal motor saat ini ke fungsi tween
-                    tweenToPosition(myMotor, myMotor:GetPivot(), cp)
+                    -- Kunci tinggi Y agar tidak melayang tinggi
+                    local safeCP = CFrame.new(cp.X, 3.76, cp.Z) 
+                    tweenToPosition(myMotor, safeCP)
                 end
                 workspace.Gravity = 196.2
             end
 
-            -- 8. Turun & Reset
-            if hum.SeatPart then hum.Jump = true end
-            task.wait(3)
+            -- 4. SELESAI (TETAP DI MOTOR)
+            task.wait(2)
         end)
         if not genv.VoidlineAutoRace then break end
     end
@@ -131,9 +125,9 @@ local Window = WindUI:CreateWindow({
     Size = UDim2.fromOffset(400, 350)
 })
 
-local AutoFarmTab = Window:Tab({ Title = "Racing", Icon = "zap", Selected = true })
+local RaceTab = Window:Tab({ Title = "Racing", Icon = "zap", Selected = true })
 
-AutoFarmTab:Toggle({
+RaceTab:Toggle({
     Title = "Enable Auto Race",
     Callback = function(v)
         genv.VoidlineAutoRace = v
@@ -145,7 +139,7 @@ AutoFarmTab:Toggle({
     end
 })
 
-AutoFarmTab:Slider({
+RaceTab:Slider({
     Title = "Speed Control (KM/H)",
     Value = { Min = 50, Max = 500, Default = 250 },
     Callback = function(v) 
@@ -153,4 +147,4 @@ AutoFarmTab:Slider({
     end
 })
 
-WindUI:Notify({Title = "Voidline", Content = "AutoRace Loaded. Gaspol Mek!"})
+WindUI:Notify({Title = "Voidline", Content = "Stealth AutoRace Active. Gas!"})

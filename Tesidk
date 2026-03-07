@@ -49,7 +49,7 @@ local function VoidlineVehicleTween(targetCFrame)
     local duration = distance / studsPerSecond 
     
     local oldGravity = workspace.Gravity
-    workspace.Gravity = 0
+    workspace.Gravity = 20
     
     local tweenValue = Instance.new("CFrameValue")
     tweenValue.Value = primary.CFrame
@@ -125,7 +125,7 @@ local Window = WindUI:CreateWindow({
     },
     OpenButton = {
         Enabled = true,
-        Title = "Open Menu",
+        Title = "Drag drive simulator",
         Draggable = true,
         Color = ColorSequence.new(Color3.fromRGB(45, 90, 45), Color3.fromRGB(20, 50, 20))
     }

@@ -20,7 +20,6 @@ local MOTOR_NAME = "Yamahax-MioSporty"
 genv.VoidlineAutoRace = false
 genv.VoidlineSpeed = 250 
 
--- Checkpoints dengan Tinggi (Y) Rendah agar aman
 local SentulCheckpoints = {
     CFrame.new(681.73, 3.76, -1207.62), CFrame.new(1200.25, 3.76, -1207.90),
     CFrame.new(1701.97, 3.76, -1073.25), CFrame.new(1723.06, 3.76, -562.64),
@@ -35,8 +34,9 @@ local SentulCheckpoints = {
     CFrame.new(-1200.07, 3.76, -1208.09),CFrame.new(681.73, 3.76, -1207.62)
 }
 
--- [[ 🚀 QUADRA TWEEN SYSTEM ]] --
+-- [[ 🚀 TWEEN SYSTEM ]] --
 local function tweenToPosition(car, endCFrame)
+    if not car or not car.Parent then return end
     local startCFrame = car:GetPivot()
     local distance = (startCFrame.p - endCFrame.p).Magnitude
     local duration = distance / (genv.VoidlineSpeed / 1.5) 
@@ -62,26 +62,25 @@ end
 local function StartAutoRace()
     while genv.VoidlineAutoRace do
         pcall(function()
-            local char = LP.Character
+            local char = LP.Character or LP.CharacterAdded:Wait()
             local hum = char:WaitForChild("Humanoid")
             local hrp = char:WaitForChild("HumanoidRootPart")
             local myMotor = nil
 
-            -- 1. CEK APAKAH SUDAH DI MOTOR
+            -- 1. VALIDASI MOTOR (Tetap di motor atau Spawn Baru)
             if hum.SeatPart and (hum.SeatPart.Parent.Name:find("blog827383") or hum.SeatPart.Parent.Name:find("Montors")) then
                 myMotor = hum.SeatPart.Parent
-                -- Balik ke hitbox start dalam keadaan tetap di motor
-                myMotor:PivotTo(HITBOX_START)
+                myMotor:PivotTo(HITBOX_START) -- Force Teleport Motor ke Start
+                task.wait(0.5)
             else
-                -- Teleport Karakter & Spawn Baru (Hanya jika belum naik motor)
                 hrp.CFrame = HITBOX_START
                 task.wait(1)
                 RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
-                task.wait(2.5)
+                task.wait(3)
                 for _, v in pairs(workspace:GetChildren()) do
                     if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
                         myMotor = v
-                        hrp.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 1.5, 0)
+                        hrp.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 2, 0)
                         task.wait(0.5)
                         fireproximityprompt(v.DriveSeat:FindFirstChildOfClass("ProximityPrompt"))
                         break
@@ -89,35 +88,39 @@ local function StartAutoRace()
                 end
             end
             
-            -- 2. PREP & CLICK
+            -- 2. PREP DELAY (20s)
             task.wait(20)
-            local detektor = workspace:FindFirstChild("blog827383Montors_1772863228_8193", true)
-            if detektor then
-                local targetClick = detektor:FindFirstChild("ClickDetector", true)
-                if targetClick then fireclickdetector(targetClick) end
+
+            -- 3. FIRE CLICKDETECTOR (Cari yang terbaru di motor lu)
+            if myMotor then
+                local cd = myMotor:FindFirstChild("ClickDetector", true)
+                if cd then fireclickdetector(cd) end
             end
 
-            -- 3. RACING
+            -- 4. RACE DELAY (16s)
             task.wait(16)
+
+            -- 5. RACING EXECUTION
             if myMotor and hum.SeatPart then
                 workspace.Gravity = 0
                 for _, cp in ipairs(SentulCheckpoints) do
                     if not genv.VoidlineAutoRace then break end
-                    -- Kunci tinggi Y agar tidak melayang tinggi
-                    local safeCP = CFrame.new(cp.X, 3.76, cp.Z) 
-                    tweenToPosition(myMotor, safeCP)
+                    tweenToPosition(myMotor, cp)
                 end
                 workspace.Gravity = 196.2
+                
+                -- Force balik ke Start setelah Checkpoint terakhir
+                task.wait(1)
+                myMotor:PivotTo(HITBOX_START)
             end
 
-            -- 4. SELESAI (TETAP DI MOTOR)
-            task.wait(2)
+            task.wait(2) -- Cooldown antar ronde
         end)
         if not genv.VoidlineAutoRace then break end
     end
 end
 
--- [[ 🎨 UI WINDOW ]] --
+-- [[ 🎨 UI ]] --
 local Window = WindUI:CreateWindow({
     Title = "VoidlineHub",
     Icon = "flag", 
@@ -131,20 +134,14 @@ RaceTab:Toggle({
     Title = "Enable Auto Race",
     Callback = function(v)
         genv.VoidlineAutoRace = v
-        if v then 
-            task.spawn(StartAutoRace) 
-        else
-            workspace.Gravity = 196.2
-        end
+        if v then task.spawn(StartAutoRace) else workspace.Gravity = 196.2 end
     end
 })
 
 RaceTab:Slider({
     Title = "Speed Control (KM/H)",
     Value = { Min = 50, Max = 500, Default = 250 },
-    Callback = function(v) 
-        genv.VoidlineSpeed = v 
-    end
+    Callback = function(v) genv.VoidlineSpeed = v end
 })
 
-WindUI:Notify({Title = "Voidline", Content = "Stealth AutoRace Active. Gas!"})
+WindUI:Notify({Title = "Voidline", Content = "Fix Loop Active. Gaspol Mek!"})

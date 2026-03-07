@@ -22,6 +22,10 @@ local RESET_INTERVAL = 7 * 60 -- 7 Menit dalam detik
 local StartMoney = 0
 local StartTime = 0
 local CurrentEarning = 0
+local HITBOX_START = CFrame.new(590.885864, -3.60543203, -1208.06238)
+genv.VoidlineAutoRace = false
+genv.VoidlineSpeed = 250 
+local EXTREME_LOW_Y = -4.50
 
 -- [[ 💰 FUNGSI FORMAT RP ]] --
 -- Fungsi ini buat bikin angka jadi "Rp 100,000,000"
@@ -34,40 +38,77 @@ local function formatRP(p2)
     end
 end
 
--- [[ 🚀 QUADRA TWEEN SYSTEM (KM/H LOGIC) ]] --
-local function VoidlineVehicleTween(targetCFrame)
+-- [[ 🚀 UNIVERSAL QUADRA TWEEN ]] --
+local function VoidlineTween(targetCFrame)
     local char = LP.Character
-    local seat = char and char.Humanoid.SeatPart
-    if not seat then return end
-    
-    local car = seat.Parent
-    local primary = car.PrimaryPart or seat
-    
-    -- Konversi KM/H ke Studs per Second (Roblox Scale)
-    local studsPerSecond = genv.VoidlineSpeed / 1.5 -- Rasio biar berasa kencengnya pas
-    local distance = (primary.Position - targetCFrame.p).Magnitude
-    local duration = distance / studsPerSecond 
-    
-    local oldGravity = workspace.Gravity
-    workspace.Gravity = 20
+    local hum = char and char:FindFirstChild("Humanoid")
+    local car = hum and hum.SeatPart and hum.SeatPart.Parent
+    if not car then return end
+
+    local distance = (car:GetPivot().p - targetCFrame.p).Magnitude
+    local duration = distance / (genv.VoidlineSpeed / 1.5)
     
     local tweenValue = Instance.new("CFrameValue")
-    tweenValue.Value = primary.CFrame
+    tweenValue.Value = car:GetPivot()
     
     local connection = tweenValue.Changed:Connect(function()
-        car:PivotTo(tweenValue.Value)
+        if car and car.Parent then
+            local cur = tweenValue.Value
+            car:PivotTo(CFrame.new(cur.X, LOW_Y, cur.Z) * cur.Rotation)
+        end
     end)
     
     local tween = TS:Create(tweenValue, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Value = targetCFrame})
+    workspace.Gravity = 0
     tween:Play()
     tween.Completed:Wait()
     
     connection:Disconnect()
     tweenValue:Destroy()
-    workspace.Gravity = oldGravity
+    workspace.Gravity = 196.2
 end
 
--- [[ 🔄 MAIN EXECUTION ]] --
+-- [[ 🏁 LOGIC: AUTO SENTUL ]] --
+local function RunSentulRace()
+    while genv.VoidlineAutoSentul do
+        pcall(function()
+            local char = LP.Character
+            local hum = char.Humanoid
+            
+            -- Re-check/Boarding
+            if not hum.SeatPart then
+                char.HumanoidRootPart.CFrame = SENTUL_START
+                RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
+                task.wait(3)
+                for _, v in pairs(workspace:GetChildren()) do
+                    if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
+                        char.HumanoidRootPart.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 1.5, 0)
+                        task.wait(0.5)
+                        fireproximityprompt(v.DriveSeat:FindFirstChildOfClass("ProximityPrompt"))
+                        break
+                    end
+                end
+            else
+                hum.SeatPart.Parent:PivotTo(SENTUL_START)
+            end
+            
+            task.wait(20) -- Prep
+            local myMotor = hum.SeatPart.Parent
+            local cd = myMotor:FindFirstChild("ClickDetector", true)
+            if cd then fireclickdetector(cd) end
+            
+            task.wait(16) -- Race
+            for _, cp in ipairs(SentulCheckpoints) do
+                if not genv.VoidlineAutoSentul then break end
+                VoidlineTween(cp)
+            end
+            task.wait(2)
+        end)
+        task.wait(0.5)
+    end
+end
+
+-- [[ 🏎️ LOGIC: AUTO DRAG ]] --
 local function StartVoidlineFarm()
     local lastReset = tick()
 
@@ -108,6 +149,7 @@ local function StartVoidlineFarm()
         task.wait(0.1)
     end
 end
+
 
 -- [[ 🎨 UI WINDUI ]] --
 local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()

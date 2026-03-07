@@ -168,15 +168,16 @@ Tab:Slider({
 
 
 -- [[ 📊 TAB DASHBOARD ]] --
-local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "line-chart", Selected = false })
+local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "trending-up", Selected = false })
 
+local EconSection = StatsTab:Section({ Title = "info ingame" })
 -- 1. BUTTON RUNNING TIME
 local TimeBtn = StatsTab:Button({
     Title = "Running Time",
     Desc = "00:00:00",
     Icon = "clock",
     Callback = function() 
-        WindUI:Notify({Title = "Voidline", Content = "Timer sedang berjalan..."}) 
+        
     end
 })
 
@@ -186,7 +187,7 @@ local EarningBtn = StatsTab:Button({
     Desc = "Rp 0",
     Icon = "banknote",
     Callback = function() 
-        WindUI:Notify({Title = "Voidline", Content = "Penghasilan sesi ini."}) 
+        
     end
 })
 
@@ -195,11 +196,11 @@ local MoneyBtn = StatsTab:Button({
     Title = "Current Money",
     Desc = "Rp 0",
     Icon = "wallet",
-    Callback = function() 
-        WindUI:Notify({Title = "Voidline", Content = "Total RP lu saat ini."}) 
+    Callback = function()
     end
 })
 
+local EconSection = StatsTab:Section({ Title = "info " })
 -- 4. BUTTON SYSTEM INFO (FPS/PING)
 local SysBtn = StatsTab:Button({
     Title = "System Status",

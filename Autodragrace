@@ -35,7 +35,8 @@ local SentulCheckpoints = {
     CFrame.new(-404.35, 3.76, -984.11), CFrame.new(-546.41, 3.76, -979.99),
     CFrame.new(-1669.74, 3.76, -761.15), CFrame.new(-1795.42, 3.76, -780.42),
     CFrame.new(-1845.05, 3.76, -959.68), CFrame.new(-1684.81, 3.76, -1189.43),
-    CFrame.new(-1200.07, 3.76, -1208.09)
+    CFrame.new(-1200.07, 3.76, -1208.09), CFrame.new(681.73, 3.76, -1207.62),
+
 }
 
 -- [[ 🚀 QUADRA TWEEN SYSTEM ]] --

@@ -167,25 +167,54 @@ Tab:Slider({
 })
 
 
--- [[ 📊 TAB STATS ]] --
+-- [[ 📊 TAB DASHBOARD ]] --
 local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "line-chart", Selected = false })
 
-local EconSection = StatsTab:Section({ Title = "Economy Monitor" })
-local RunTimeLabel = EconSection:Label({ Title = "Running Time: 00:00:00" })
-local EarningLabel = EconSection:Label({ Title = "Total Earning: Rp 0" })
-local CashLabel = EconSection:Label({ Title = "Current Money: Rp 0" })
+-- 1. BUTTON RUNNING TIME
+local TimeBtn = StatsTab:Button({
+    Title = "Running Time",
+    Desc = "00:00:00",
+    Icon = "clock",
+    Callback = function() 
+        WindUI:Notify({Title = "Voidline", Content = "Timer sedang berjalan..."}) 
+    end
+})
 
-local SystemSection = StatsTab:Section({ Title = "System Info" })
-local FpsLabel = SystemSection:Label({ Title = "FPS: 0" })
-local PingLabel = SystemSection:Label({ Title = "Ping: 0ms" })
-local ExecLabel = SystemSection:Label({ Title = "Executor: " .. (identifyexecutor() or "Unknown") })
+-- 2. BUTTON TOTAL EARNING
+local EarningBtn = StatsTab:Button({
+    Title = "Total Earning",
+    Desc = "Rp 0",
+    Icon = "banknote",
+    Callback = function() 
+        WindUI:Notify({Title = "Voidline", Content = "Penghasilan sesi ini."}) 
+    end
+})
+
+-- 3. BUTTON CURRENT MONEY
+local MoneyBtn = StatsTab:Button({
+    Title = "Current Money",
+    Desc = "Rp 0",
+    Icon = "wallet",
+    Callback = function() 
+        WindUI:Notify({Title = "Voidline", Content = "Total RP lu saat ini."}) 
+    end
+})
+
+-- 4. BUTTON SYSTEM INFO (FPS/PING)
+local SysBtn = StatsTab:Button({
+    Title = "System Status",
+    Desc = "FPS: 0 | Ping: 0ms",
+    Icon = "monitor",
+    Callback = function() 
+        WindUI:Notify({Title = "Voidline", Content = "Status koneksi & hardware."}) 
+    end
+})
 
 -- [[ 🔄 STATS REFRESHER LOGIC ]] --
 task.spawn(function()
     while true do
         task.wait(1) 
         pcall(function()
-            -- Ambil data
             local PlayerData = LP:WaitForChild("PlayerData", 5)
             local CurrentRP = PlayerData.RPValue.Value 
             
@@ -200,22 +229,20 @@ task.spawn(function()
                 local diff = tick() - StartTime
                 local h, m, s = math.floor(diff/3600), math.floor((diff%3600)/60), math.floor(diff%60)
                 
-                -- UPDATE TEXT LABEL (Cara WindUI)
-                RunTimeLabel:SetTitle(string.format("Running Time: %02d:%02d:%02d", h, m, s))
-                EarningLabel:SetTitle("Total Earning: " .. formatRP(CurrentEarning))
+                -- UPDATE BUTTON DESC (Tempat naruh angkanya)
+                TimeBtn:SetDesc(string.format("%02d:%02d:%02d", h, m, s))
+                EarningBtn:SetDesc(formatRP(CurrentEarning))
             else
                 StartRP = 0
             end
             
-            -- 2. UPDATE DISPLAY LABELS
-            CashLabel:SetTitle("Current Money: " .. formatRP(CurrentRP))
+            -- 2. UPDATE MONEY DESC
+            MoneyBtn:SetDesc(formatRP(CurrentRP))
             
-            -- 3. SYSTEM INFO
+            -- 3. UPDATE SYSTEM DESC
             local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
             local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
-            
-            FpsLabel:SetTitle("FPS: " .. fps)
-            PingLabel:SetTitle("Ping: " .. ping .. "ms")
+            SysBtn:SetDesc("FPS: " .. fps .. " | Ping: " .. ping .. "ms")
         end)
     end
 end)

@@ -166,20 +166,16 @@ Tab:Slider({
     end
 })
 
+
 -- [[ 📊 TAB STATS ]] --
 local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "line-chart", Selected = false })
 
--- Section 1: Economy & Time
 local EconSection = StatsTab:Section({ Title = "Economy Monitor" })
-
 local RunTimeLabel = EconSection:Label({ Title = "Running Time: 00:00:00" })
-local EarningLabel = EconSection:Label({ Title = "Total Earning: $0" })
-local CashLabel = EconSection:Label({ Title = "Current Money: $0" })
-local RPLabel = EconSection:Label({ Title = "Current RP: 0" })
+local EarningLabel = EconSection:Label({ Title = "Total Earning: Rp 0" })
+local CashLabel = EconSection:Label({ Title = "Current Money: Rp 0" })
 
--- Section 2: System Info
 local SystemSection = StatsTab:Section({ Title = "System Info" })
-
 local FpsLabel = SystemSection:Label({ Title = "FPS: 0" })
 local PingLabel = SystemSection:Label({ Title = "Ping: 0ms" })
 local ExecLabel = SystemSection:Label({ Title = "Executor: " .. (identifyexecutor() or "Unknown") })
@@ -188,41 +184,38 @@ local ExecLabel = SystemSection:Label({ Title = "Executor: " .. (identifyexecuto
 task.spawn(function()
     while true do
         task.wait(1) 
-        
-        -- Ambil data dari PlayerData sesuai yang lu kasih tadi
-        local PlayerData = LP:WaitForChild("PlayerData")
-        local CurrentRP = PlayerData.RPValue.Value 
-        
-        -- 1. LOGIC EARNING (Hanya kalau AutoFarm ON)
-        if genv.VoidlineAutoFarm then
-            if StartRP == 0 then 
-                StartRP = CurrentRP -- Catat RP awal pas klik ON
-                StartTime = tick()
+        pcall(function()
+            -- Ambil data
+            local PlayerData = LP:WaitForChild("PlayerData", 5)
+            local CurrentRP = PlayerData.RPValue.Value 
+            
+            -- 1. LOGIC EARNING
+            if genv.VoidlineAutoFarm then
+                if StartRP == 0 then 
+                    StartRP = CurrentRP
+                    StartTime = tick()
+                end
+                CurrentEarning = CurrentRP - StartRP
+                
+                local diff = tick() - StartTime
+                local h, m, s = math.floor(diff/3600), math.floor((diff%3600)/60), math.floor(diff%60)
+                
+                -- UPDATE TEXT LABEL (Cara WindUI)
+                RunTimeLabel:SetTitle(string.format("Running Time: %02d:%02d:%02d", h, m, s))
+                EarningLabel:SetTitle("Total Earning: " .. formatRP(CurrentEarning))
+            else
+                StartRP = 0
             end
-            CurrentEarning = CurrentRP - StartRP
             
-            -- Timer Formatter (Jam:Menit:Detik)
-            local diff = tick() - StartTime
-            local h = math.floor(diff / 3600)
-            local m = math.floor((diff % 3600) / 60)
-            local s = math.floor(diff % 60)
+            -- 2. UPDATE DISPLAY LABELS
+            CashLabel:SetTitle("Current Money: " .. formatRP(CurrentRP))
             
-            RunTimeLabel:SetTitle(string.format("Running Time: %02d:%02d:%02d", h, m, s))
-            EarningLabel:SetTitle("Total Earning: " .. formatRP(CurrentEarning))
-        else
-            -- Reset biar kalau dimatiin terus dinyalain lagi, itungannya mulai dari 0
-            StartRP = 0
-            StartTime = 0
-        end
-        
-        -- 2. UPDATE DISPLAY LABELS
-        CashLabel:SetTitle("Current Money: " .. formatRP(CurrentRP))
-        
-        -- 3. UPDATE SYSTEM INFO (FPS & PING)
-        local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
-        local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
-        
-        FpsLabel:SetTitle("FPS: " .. fps)
-        PingLabel:SetTitle("Ping: " .. ping .. "ms")
+            -- 3. SYSTEM INFO
+            local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
+            local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+            
+            FpsLabel:SetTitle("FPS: " .. fps)
+            PingLabel:SetTitle("Ping: " .. ping .. "ms")
+        end)
     end
 end)

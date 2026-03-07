@@ -10,114 +10,132 @@ pcall(function()
     end
 end)
 
--- [[ ⚙️ SETTINGS ]] --
+-- [[ 🎨 LOAD UI LIBRARY ]] --
+local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()
+
+-- [[ ⚙️ CONFIG & DATA ]] --
 local LP = game:GetService("Players").LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
 local TS = game:GetService("TweenService")
 
-local POS_A = CFrame.new(80.019, -4.013, -872.866)
-local POS_B = CFrame.new(1300.53, -4.013, -867.006)
+local HITBOX_START = CFrame.new(590.885864, -3.60543203, -1208.06238)
 local MOTOR_NAME = "Yamahax-MioSporty"
+genv.VoidlineAutoRace = false
+genv.VoidlineSpeed = 250 -- Default Speed
 
-genv.VoidlineAutoFarm = false
+-- Tabel Koordinat (21 ke 1)
+local SentulCheckpoints = {
+    CFrame.new(681.73, 3.76, -1207.62), CFrame.new(1200.25, 3.76, -1207.90),
+    CFrame.new(1701.97, 3.76, -1073.25), CFrame.new(1723.06, 3.76, -562.64),
+    CFrame.new(1848.16, 3.76, -204.95), CFrame.new(3237.86, 3.76, 768.42),
+    CFrame.new(3430.91, 3.76, 993.99), CFrame.new(3191.61, 3.76, 1241.81),
+    CFrame.new(2369.18, 3.76, 378.68), CFrame.new(1459.46, 3.76, -153.81),
+    CFrame.new(1430.42, 3.76, -347.64), CFrame.new(1328.40, 3.76, -468.94),
+    CFrame.new(-96.96, 3.76, -515.90), CFrame.new(-249.54, 3.76, -646.09),
+    CFrame.new(-404.35, 3.76, -984.11), CFrame.new(-546.41, 3.76, -979.99),
+    CFrame.new(-1669.74, 3.76, -761.15), CFrame.new(-1795.42, 3.76, -780.42),
+    CFrame.new(-1845.05, 3.76, -959.68), CFrame.new(-1684.81, 3.76, -1189.43),
+    CFrame.new(-1200.07, 3.76, -1208.09)
+}
 
 -- [[ 🚀 QUADRA TWEEN SYSTEM ]] --
-local function VoidlineVehicleTween(targetCFrame, duration)
-    local char = LP.Character
-    local seat = char and char.Humanoid.SeatPart
-    if not seat then return end
+local function tweenToPosition(car, startCFrame, endCFrame)
+    local distance = (startCFrame.p - endCFrame.p).Magnitude
+    local duration = distance / (genv.VoidlineSpeed / 1.5) -- Konversi KM/H ke Speed Tween
     
-    local car = seat.Parent
-    local primary = car.PrimaryPart or seat
-    local oldGravity = workspace.Gravity
-    
-    workspace.Gravity = 0
     local tweenValue = Instance.new("CFrameValue")
-    tweenValue.Value = primary.CFrame
-    
+    tweenValue.Value = startCFrame
+
     local connection = tweenValue.Changed:Connect(function()
         car:PivotTo(tweenValue.Value)
     end)
-    
-    local tween = TS:Create(tweenValue, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Value = targetCFrame})
+
+    local tween = TS:Create(tweenValue, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Value = endCFrame})
     tween:Play()
     tween.Completed:Wait()
     
     connection:Disconnect()
     tweenValue:Destroy()
-    workspace.Gravity = oldGravity
 end
 
--- [[ 🔄 EXECUTION ]] --
-local function StartVoidlineFarm()
-    local char = LP.Character
-    local hrp = char:WaitForChild("HumanoidRootPart")
-    
-    -- 1. SPAWN 1 KALI
-    print("🌑 Voidline: Spawning...")
-    RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
-    task.wait(1.5)
-    
-    -- 2. TELEPORT KE DEPAN JOK & FIRE PROXIMITY
-    local motor = workspace:FindFirstChild("blog827383Montors_1772824873_8732")
-    if motor and motor:FindFirstChild("DriveSeat") then
-        local seat = motor.DriveSeat
-        hrp.CFrame = seat.CFrame * CFrame.new(0, 2, 2) -- TP Depan Jok
-        task.wait(0.3)
-        fireproximityprompt(seat:FindFirstChildOfClass("ProximityPrompt"))
-    end
-    
-    task.wait(1)
-    
-    -- 3. TWEEN BOLAK-BALIK NON-STOP
-    while genv.VoidlineAutoFarm do
+-- [[ 🏎️ MAIN LOOP ]] --
+local function StartAutoRace()
+    while genv.VoidlineAutoRace do
         pcall(function()
-            -- Ke Titik B
-            VoidlineVehicleTween(POS_B, 5)
-            task.wait(0.5)
-            -- Balik Ke Titik A
-            VoidlineVehicleTween(POS_A, 5)
-            task.wait(0.5)
+            local char = LP.Character
+            local hrp = char:WaitForChild("HumanoidRootPart")
+            local hum = char:WaitForChild("Humanoid")
+
+            -- 1. Teleport Hitbox
+            hrp.CFrame = HITBOX_START
+            task.wait(1)
+
+            -- 2. Spawn Motor
+            RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
+            task.wait(2)
+
+            -- 3. Boarding
+            local myMotor = nil
+            for _, v in pairs(workspace:GetChildren()) do
+                if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
+                    myMotor = v
+                    hrp.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 1.5, 0)
+                    task.wait(0.5)
+                    fireproximityprompt(v.DriveSeat:FindFirstChildOfClass("ProximityPrompt"))
+                    break
+                end
+            end
+            
+            task.wait(20) -- Prep Delay
+
+            -- 4. Fire ClickDetector
+            local detektor = workspace:FindFirstChild("blog827383Montors_1772863228_8193", true)
+            if detektor then
+                local targetClick = detektor:FindFirstChild("ClickDetector", true)
+                if targetClick then fireclickdetector(targetClick) end
+            end
+
+            task.wait(10) -- Race Delay
+
+            -- 5. Quadra Racing
+            if myMotor and hum.SeatPart then
+                workspace.Gravity = 0
+                for _, cp in ipairs(SentulCheckpoints) do
+                    if not genv.VoidlineAutoRace then break end
+                    tweenToPosition(myMotor, myMotor:GetPivot(), cp)
+                end
+                workspace.Gravity = 196.2
+            end
+
+            if hum.SeatPart then hum.Jump = true end
+            task.wait(3)
         end)
-        
-        -- Berhenti kalau toggle dimatikan
-        if not genv.VoidlineAutoFarm then break end
+        if not genv.VoidlineAutoRace then break end
     end
 end
 
--- [[ 🎨 UI WINDUI ]] --
-local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()
--- [[ disini taruh window ]] --
+-- [[ 🎨 CREATE UI ]] --
 local Window = WindUI:CreateWindow({
     Title = "VoidlineHub",
-    Icon = "house", 
+    Icon = "flag", 
     Author = "Bilzz",
-    Folder = "terserah",
-    Transparent = true,
-    Size = UDim2.fromOffset(300, 350),
-    Topbar = {
-        Height = 45,
-        ButtonsType = "Mac",
-    },
-    OpenButton = {
-        Enabled = true,
-        Title = "Drag Drive Simulator",
-        Draggable = true,
-        Color = ColorSequence.new(Color3.fromRGB(45, 90, 45), Color3.fromRGB(20, 50, 20))
-    }
+    Size = UDim2.fromOffset(400, 400),
 })
 
-local Tab = Window:Tab({ Title = "🏎️ Auto Farm", Icon = "zap" })
+local Tab = Window:Tab({ Title = "Auto Race", Icon = "zap", Selected = true })
 
 Tab:Toggle({
-    Title = "Start Bolak-Balik",
-    Default = false,
+    Title = "Enable Auto Race",
     Callback = function(v)
-        genv.VoidlineAutoFarm = v
-        if v then
-            task.spawn(StartVoidlineFarm)
-        end
+        genv.VoidlineAutoRace = v
+        if v then task.spawn(StartAutoRace) end
     end
 })
 
-WindUI:Notify({Title = "Voidline", Content = "Ready, Mek!"})
+Tab:Slider({
+    Title = "Race Speed (KM/H)",
+    Value = { Min = 50, Max = 500, Default = 250 },
+    Callback = function(v) genv.VoidlineSpeed = v end
+})
+
+WindUI:Notify({Title = "Voidline", Content = "AutoRace Ready, Gaspol Mek!"})

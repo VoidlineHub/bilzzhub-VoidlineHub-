@@ -12,10 +12,6 @@ local LP = game:GetService("Players").LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
 local TS = game:GetService("TweenService")
 
-local POS_A = CFrame.new(80.019, -4.013, -872.866)
-local POS_B = CFrame.new(1300.53, -4.013, -867.006)
-local MOTOR_NAME = "Yamahax-MioSporty"
-
 genv.VoidlineAutoFarm = false
 genv.VoidlineSpeed = 250 -- Default Speed (KM/H)
 local RESET_INTERVAL = 7 * 60 -- 7 Menit dalam detik
@@ -27,6 +23,25 @@ genv.VoidlineAutoRace = false
 genv.VoidlineSpeed = 250 
 local EXTREME_LOW_Y = -4.50
 
+
+-- [[ kordinat drag ]] --
+local POS_A = CFrame.new(80.019, -4.013, -872.866)
+local POS_B = CFrame.new(1300.53, -4.013, -867.006)
+
+-- [[ kordinat sentul ]] --
+local SentulCheckpoints = {
+    CFrame.new(681.73, EXTREME_LOW_Y, -1207.62), CFrame.new(1200.25, EXTREME_LOW_Y, -1207.90),
+    CFrame.new(1701.97, EXTREME_LOW_Y, -1073.25), CFrame.new(1723.06, EXTREME_LOW_Y, -562.64),
+    CFrame.new(1848.16, EXTREME_LOW_Y, -204.95), CFrame.new(3237.86, EXTREME_LOW_Y, 768.42),
+    CFrame.new(3430.91, EXTREME_LOW_Y, 993.99), CFrame.new(3191.61, EXTREME_LOW_Y, 1241.81),
+    CFrame.new(2369.18, EXTREME_LOW_Y, 378.68), CFrame.new(1459.46, EXTREME_LOW_Y, -153.81),
+    CFrame.new(1430.42, EXTREME_LOW_Y, -347.64), CFrame.new(1328.40, EXTREME_LOW_Y, -468.94),
+    CFrame.new(-96.96, EXTREME_LOW_Y, -515.90), CFrame.new(-249.54, EXTREME_LOW_Y, -646.09),
+    CFrame.new(-404.35, EXTREME_LOW_Y, -984.11), CFrame.new(-546.41, EXTREME_LOW_Y, -979.99),
+    CFrame.new(-1669.74, EXTREME_LOW_Y, -761.15), CFrame.new(-1795.42, EXTREME_LOW_Y, -780.42),
+    CFrame.new(-1845.05, EXTREME_LOW_Y, -959.68), CFrame.new(-1684.81, EXTREME_LOW_Y, -1189.43),
+    CFrame.new(-1200.07, EXTREME_LOW_Y, -1208.09),CFrame.new(681.73, EXTREME_LOW_Y, -1207.62)
+}
 -- [[ 💰 FUNGSI FORMAT RP ]] --
 -- Fungsi ini buat bikin angka jadi "Rp 100,000,000"
 local function formatRP(p2)
@@ -68,45 +83,68 @@ local function VoidlineTween(targetCFrame)
     workspace.Gravity = 196.2
 end
 
--- [[ 🏁 LOGIC: AUTO SENTUL ]] --
-local function RunSentulRace()
-    while genv.VoidlineAutoSentul do
+-- [[ 🏎️ MAIN AUTO RACE ]] --
+local function StartAutoRace()
+    while genv.VoidlineAutoRace do
         pcall(function()
-            local char = LP.Character
-            local hum = char.Humanoid
-            
-            -- Re-check/Boarding
-            if not hum.SeatPart then
-                char.HumanoidRootPart.CFrame = SENTUL_START
+            local char = LP.Character or LP.CharacterAdded:Wait()
+            local hum = char:WaitForChild("Humanoid")
+            local hrp = char:WaitForChild("HumanoidRootPart")
+            local myMotor = nil
+
+            -- 1. VALIDASI MOTOR (Tetap di motor atau Spawn Baru)
+            if hum.SeatPart and (hum.SeatPart.Parent.Name:find("blog827383") or hum.SeatPart.Parent.Name:find("Montors")) then
+                myMotor = hum.SeatPart.Parent
+                myMotor:PivotTo(HITBOX_START) -- Force Teleport Motor ke Start
+                task.wait(0.5)
+            else
+                hrp.CFrame = HITBOX_START
+                task.wait(1)
                 RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
                 task.wait(3)
                 for _, v in pairs(workspace:GetChildren()) do
                     if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
-                        char.HumanoidRootPart.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 1.5, 0)
+                        myMotor = v
+                        hrp.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 2, 0)
                         task.wait(0.5)
                         fireproximityprompt(v.DriveSeat:FindFirstChildOfClass("ProximityPrompt"))
                         break
                     end
                 end
-            else
-                hum.SeatPart.Parent:PivotTo(SENTUL_START)
             end
             
-            task.wait(20) -- Prep
-            local myMotor = hum.SeatPart.Parent
-            local cd = myMotor:FindFirstChild("ClickDetector", true)
-            if cd then fireclickdetector(cd) end
-            
-            task.wait(16) -- Race
-            for _, cp in ipairs(SentulCheckpoints) do
-                if not genv.VoidlineAutoSentul then break end
-                VoidlineTween(cp)
+            -- 2. PREP DELAY (20s)
+            task.wait(20)
+
+            -- 3. FIRE CLICKDETECTOR (Cari yang terbaru di motor lu)
+            if myMotor then
+                local cd = myMotor:FindFirstChild("ClickDetector", true)
+                if cd then fireclickdetector(cd) end
             end
-            task.wait(2)
+
+            -- 4. RACE DELAY (16s)
+            task.wait(16)
+
+            -- 5. RACING EXECUTION
+            if myMotor and hum.SeatPart then
+                workspace.Gravity = 0
+                for _, cp in ipairs(SentulCheckpoints) do
+                    if not genv.VoidlineAutoRace then break end
+                    tweenToPosition(myMotor, cp)
+                end
+                workspace.Gravity = 196.2
+                
+                -- Force balik ke Start setelah Checkpoint terakhir
+                task.wait(1)
+                myMotor:PivotTo(HITBOX_START)
+            end
+
+            task.wait(2) -- Cooldown antar ronde
         end)
-        task.wait(0.5)
+        if not genv.VoidlineAutoRace then break end
     end
 end
+
 
 -- [[ 🏎️ LOGIC: AUTO DRAG ]] --
 local function StartVoidlineFarm()
@@ -119,7 +157,6 @@ local function StartVoidlineFarm()
 
         -- 1. CEK TIMER 7 MENIT ATAU LAGI TURUN MOTOR
         if tick() - lastReset >= RESET_INTERVAL or not hum.SeatPart then
-            print("🌑 Voidline: Time to Reset / Boarding...")
             if hum.SeatPart then hum.Jump = true task.wait(0.5) end
             
             RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)

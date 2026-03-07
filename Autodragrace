@@ -21,9 +21,9 @@ local TS = game:GetService("TweenService")
 local HITBOX_START = CFrame.new(590.885864, -3.60543203, -1208.06238)
 local MOTOR_NAME = "Yamahax-MioSporty"
 genv.VoidlineAutoRace = false
-genv.VoidlineSpeed = 250 -- Default Speed
+genv.VoidlineSpeed = 250 -- Default KM/H
 
--- Tabel Koordinat (21 ke 1)
+-- Tabel Koordinat (Sentul Track)
 local SentulCheckpoints = {
     CFrame.new(681.73, 3.76, -1207.62), CFrame.new(1200.25, 3.76, -1207.90),
     CFrame.new(1701.97, 3.76, -1073.25), CFrame.new(1723.06, 3.76, -562.64),
@@ -41,13 +41,17 @@ local SentulCheckpoints = {
 -- [[ 🚀 QUADRA TWEEN SYSTEM ]] --
 local function tweenToPosition(car, startCFrame, endCFrame)
     local distance = (startCFrame.p - endCFrame.p).Magnitude
-    local duration = distance / (genv.VoidlineSpeed / 1.5) -- Konversi KM/H ke Speed Tween
+    -- Kalkulasi durasi berdasarkan slider (Speed KM/H)
+    local duration = distance / (genv.VoidlineSpeed / 1.5) 
     
     local tweenValue = Instance.new("CFrameValue")
     tweenValue.Value = startCFrame
 
+    -- Sistem Quadra: Update posisi via Changed Signal
     local connection = tweenValue.Changed:Connect(function()
-        car:PivotTo(tweenValue.Value)
+        if car and car.Parent then
+            car:PivotTo(tweenValue.Value)
+        end
     end)
 
     local tween = TS:Create(tweenValue, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Value = endCFrame})
@@ -58,7 +62,7 @@ local function tweenToPosition(car, startCFrame, endCFrame)
     tweenValue:Destroy()
 end
 
--- [[ 🏎️ MAIN LOOP ]] --
+-- [[ 🏎️ MAIN AUTO RACE ]] --
 local function StartAutoRace()
     while genv.VoidlineAutoRace do
         pcall(function()
@@ -66,15 +70,15 @@ local function StartAutoRace()
             local hrp = char:WaitForChild("HumanoidRootPart")
             local hum = char:WaitForChild("Humanoid")
 
-            -- 1. Teleport Hitbox
+            -- 1. Teleport ke Hitbox
             hrp.CFrame = HITBOX_START
             task.wait(1)
 
             -- 2. Spawn Motor
             RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
-            task.wait(2)
+            task.wait(2.5)
 
-            -- 3. Boarding
+            -- 3. Cari Motor & Naik
             local myMotor = nil
             for _, v in pairs(workspace:GetChildren()) do
                 if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
@@ -86,27 +90,31 @@ local function StartAutoRace()
                 end
             end
             
-            task.wait(20) -- Prep Delay
+            -- 4. Delay Prep (20 Detik)
+            task.wait(20)
 
-            -- 4. Fire ClickDetector
+            -- 5. Fire ClickDetector
             local detektor = workspace:FindFirstChild("blog827383Montors_1772863228_8193", true)
             if detektor then
                 local targetClick = detektor:FindFirstChild("ClickDetector", true)
                 if targetClick then fireclickdetector(targetClick) end
             end
 
-            task.wait(10) -- Race Delay
+            -- 6. Delay Race (10 Detik)
+            task.wait(10)
 
-            -- 5. Quadra Racing
+            -- 7. Quadra Racing Loop
             if myMotor and hum.SeatPart then
                 workspace.Gravity = 0
                 for _, cp in ipairs(SentulCheckpoints) do
                     if not genv.VoidlineAutoRace then break end
+                    -- Kirim posisi awal motor saat ini ke fungsi tween
                     tweenToPosition(myMotor, myMotor:GetPivot(), cp)
                 end
                 workspace.Gravity = 196.2
             end
 
+            -- 8. Turun & Reset
             if hum.SeatPart then hum.Jump = true end
             task.wait(3)
         end)
@@ -114,28 +122,34 @@ local function StartAutoRace()
     end
 end
 
--- [[ 🎨 CREATE UI ]] --
+-- [[ 🎨 UI WINDOW ]] --
 local Window = WindUI:CreateWindow({
     Title = "VoidlineHub",
     Icon = "flag", 
     Author = "Bilzz",
-    Size = UDim2.fromOffset(400, 400),
+    Size = UDim2.fromOffset(400, 350)
 })
 
-local Tab = Window:Tab({ Title = "Auto Race", Icon = "zap", Selected = true })
+local Tab = Window:Tab({ Title = "Racing", Icon = "zap", Selected = true })
 
 Tab:Toggle({
     Title = "Enable Auto Race",
     Callback = function(v)
         genv.VoidlineAutoRace = v
-        if v then task.spawn(StartAutoRace) end
+        if v then 
+            task.spawn(StartAutoRace) 
+        else
+            workspace.Gravity = 196.2
+        end
     end
 })
 
 Tab:Slider({
-    Title = "Race Speed (KM/H)",
+    Title = "Speed Control (KM/H)",
     Value = { Min = 50, Max = 500, Default = 250 },
-    Callback = function(v) genv.VoidlineSpeed = v end
+    Callback = function(v) 
+        genv.VoidlineSpeed = v 
+    end
 })
 
-WindUI:Notify({Title = "Voidline", Content = "AutoRace Ready, Gaspol Mek!"})
+WindUI:Notify({Title = "Voidline", Content = "AutoRace Loaded. Gaspol Mek!"})

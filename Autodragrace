@@ -182,11 +182,11 @@ local Window = WindUI:CreateWindow({
     Author = "Bilzz",
     Folder = "Voidline_Configs",
     Transparent = true,
-    Size = UDim2.fromOffset(450, 400), -- Digedein dikit biar gak sempit
+    Size = UDim2.fromOffset(300, 350), -- Digedein dikit biar gak sempit
     Topbar = { Height = 45, ButtonsType = "Mac" },
     OpenButton = {
         Enabled = true,
-        Title = "Voidline Hub",
+        Title = "DragDrive simulator",
         Draggable = true,
         Color = ColorSequence.new(Color3.fromRGB(45, 90, 45), Color3.fromRGB(20, 50, 20))
     }
@@ -194,38 +194,41 @@ local Window = WindUI:CreateWindow({
 
 local Tab = Window:Tab({ Title = "Auto Farm", Icon = "zap", Selected = true })
 
-Tab:Section({ Title = "Smart Farm & Race" })
+Tab:Section({ Title = "autofarm & race" })
 
 Tab:Toggle({
-    Title = "Start Smart Drag (POS A-B)",
+    Title = "Auto drag race",
     Callback = function(v)
         genv.VoidlineAutoFarm = v
         if v then task.spawn(StartVoidlineFarm) end
     end
 })
 
-Tab:Section({ Title = "auto race" })
 Tab:Toggle({
     Title = "Start Auto Sentul Race",
+    Desc = "autorce sentul semua udah auto"
     Callback = function(v)
         genv.VoidlineAutoRace = v
         if v then task.spawn(StartAutoRace) end
     end
 })
 
+Tab:Section({ Title = "speed farm" })
 Tab:Slider({
     Title = "Global Speed Control",
+    Desc = "Atur speed disini"
     Value = { Min = 50, Max = 500, Default = 250 },
     Callback = function(v) genv.VoidlineSpeed = v end
 })
 
 -- [[ 📊 DASHBOARD ]] --
-local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "trending-up" })
+local StatsTab = Window:Tab({ Title = "Stats", Icon = "trending-up" })
 StatsTab:Section({ Title = "Live Statistics" })
 
 local TimeBtn = StatsTab:Button({ Title = "Running Time", Desc = "00:00:00", Icon = "clock" })
 local EarningBtn = StatsTab:Button({ Title = "Total Earning", Desc = "Rp 0", Icon = "banknote" })
 local MoneyBtn = StatsTab:Button({ Title = "Current Money", Desc = "Rp 0", Icon = "wallet" })
+StatsTab:Section({ Title = "Live Ingame" })
 local SysBtn = StatsTab:Button({ Title = "System Status", Desc = "FPS: 0 | Ping: 0ms", Icon = "monitor" })
 
 -- [[ 🔄 REFRESHER ]] --

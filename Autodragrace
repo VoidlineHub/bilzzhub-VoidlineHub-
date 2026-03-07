@@ -198,6 +198,7 @@ Tab:Section({ Title = "autofarm & race" })
 
 Tab:Toggle({
     Title = "Auto drag race",
+    Desc = "ini juga bagus kok",
     Callback = function(v)
         genv.VoidlineAutoFarm = v
         if v then task.spawn(StartVoidlineFarm) end
@@ -206,7 +207,7 @@ Tab:Toggle({
 
 Tab:Toggle({
     Title = "Start Auto Sentul Race",
-    Desc = "autorce sentul semua udah auto"
+    Desc = "autorce sentul semua udah auto",
     Callback = function(v)
         genv.VoidlineAutoRace = v
         if v then task.spawn(StartAutoRace) end
@@ -216,7 +217,7 @@ Tab:Toggle({
 Tab:Section({ Title = "speed farm" })
 Tab:Slider({
     Title = "Global Speed Control",
-    Desc = "Atur speed disini"
+    Desc = "Atur speed disini",
     Value = { Min = 50, Max = 500, Default = 250 },
     Callback = function(v) genv.VoidlineSpeed = v end
 })

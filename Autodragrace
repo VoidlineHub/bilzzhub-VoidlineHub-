@@ -101,7 +101,7 @@ local function StartAutoRace()
             end
 
             -- 6. Delay Race (10 Detik)
-            task.wait(10)
+            task.wait(12)
 
             -- 7. Quadra Racing Loop
             if myMotor and hum.SeatPart then

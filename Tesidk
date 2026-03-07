@@ -1,8 +1,5 @@
 -- [[ 🛡️ BYPASS ADONIS & NETWORK ]] --
 local genv = getgenv()
-local fenv = getfenv()
-
--- Load bypass dari source yang lu kasih
 pcall(function()
     loadstring(game:HttpGet('https://raw.githubusercontent.com/LynX99-9/komtolmmek2/refs/heads/main/Adonis'))()
     if game:GetService('CoreGui').RobloxGui:FindFirstChild('CoreScripts/NetworkPause') then
@@ -20,28 +17,40 @@ local POS_B = CFrame.new(1300.53, -4.013, -867.006)
 local MOTOR_NAME = "Yamahax-MioSporty"
 
 genv.VoidlineAutoFarm = false
+genv.VoidlineSpeed = 250 -- Default Speed (KM/H)
+local RESET_INTERVAL = 7 * 60 -- 7 Menit dalam detik
+local StartMoney = 0
+local StartTime = 0
+local CurrentEarning = 0
 
--- [[ 🔍 MONEY COOLDOWN CHECKER ]] --
-local function IsOnCooldown()
-    local cashGui = LP.PlayerGui:FindFirstChild("CashDriving")
-    if cashGui and cashGui:FindFirstChild("CashLabel") then
-        local txt = cashGui.CashLabel.CashValue.Text:lower()
-        return string.find(txt, "cooldown") or string.find(txt, "wait")
+-- [[ 💰 FUNGSI FORMAT RP ]] --
+-- Fungsi ini buat bikin angka jadi "Rp 100,000,000"
+local function formatRP(p2)
+    local v3, v4, v5 = string.match(tostring(p2), "^([^%d]*%d)(%d*)(.-)$")
+    if v3 and (v4 and v5) then
+        return "Rp " .. v3 .. v4:reverse():gsub("(%d%d%d)", "%1,"):reverse() .. v5
+    else
+        return "Rp " .. tostring(p2)
     end
-    return false
 end
 
--- [[ 🚀 QUADRA TWEEN SYSTEM ]] --
-local function VoidlineVehicleTween(targetCFrame, duration)
+-- [[ 🚀 QUADRA TWEEN SYSTEM (KM/H LOGIC) ]] --
+local function VoidlineVehicleTween(targetCFrame)
     local char = LP.Character
     local seat = char and char.Humanoid.SeatPart
     if not seat then return end
     
     local car = seat.Parent
     local primary = car.PrimaryPart or seat
-    local oldGravity = workspace.Gravity
     
+    -- Konversi KM/H ke Studs per Second (Roblox Scale)
+    local studsPerSecond = genv.VoidlineSpeed / 1.5 -- Rasio biar berasa kencengnya pas
+    local distance = (primary.Position - targetCFrame.p).Magnitude
+    local duration = distance / studsPerSecond 
+    
+    local oldGravity = workspace.Gravity
     workspace.Gravity = 0
+    
     local tweenValue = Instance.new("CFrameValue")
     tweenValue.Value = primary.CFrame
     
@@ -58,68 +67,56 @@ local function VoidlineVehicleTween(targetCFrame, duration)
     workspace.Gravity = oldGravity
 end
 
--- [[ 🔄 EXECUTION ]] --
+-- [[ 🔄 MAIN EXECUTION ]] --
 local function StartVoidlineFarm()
+    local lastReset = tick()
+
     while genv.VoidlineAutoFarm do
         local char = LP.Character
         local hum = char:WaitForChild("Humanoid")
         local hrp = char:WaitForChild("HumanoidRootPart")
 
-        -- 1. SPAWN & FORCE TELEPORT KE YAMAHA
-        if not hum.SeatPart then
-            print("🌑 Voidline: Spawning & Boarding Yamaha...")
-            RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
-            task.wait(1.2)
+        -- 1. CEK TIMER 7 MENIT ATAU LAGI TURUN MOTOR
+        if tick() - lastReset >= RESET_INTERVAL or not hum.SeatPart then
+            print("🌑 Voidline: Time to Reset / Boarding...")
+            if hum.SeatPart then hum.Jump = true task.wait(0.5) end
             
-            -- Cari motor spesifik/motor lu di workspace
-            local motor = nil
+            RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
+            task.wait(1.5)
+            
             for _, v in pairs(workspace:GetChildren()) do
                 if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
-                    motor = v
+                    hrp.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 1.5, 0)
+                    task.wait(0.3)
+                    fireproximityprompt(v.DriveSeat:FindFirstChildOfClass("ProximityPrompt"))
                     break
                 end
             end
-            
-            if motor then
-                local seat = motor.DriveSeat
-                -- Langsung TP ke jok tanpa tapi
-                hrp.CFrame = seat.CFrame * CFrame.new(0, 1, 0)
-                task.wait(0.2)
-                fireproximityprompt(seat:FindFirstChildOfClass("ProximityPrompt"))
-                task.wait(0.8)
-            end
+            lastReset = tick() -- Reset timer
+            task.wait(1)
         end
 
-        -- 2. TWEEN BOLAK-BALIK + COOLDOWN AUTO-RESPAWN
+        -- 2. TWEEN BOLAK-BALIK
         if hum.SeatPart then
             pcall(function()
-                -- OTW POS B
-                VoidlineVehicleTween(POS_B, 2)
+                VoidlineVehicleTween(POS_B)
                 task.wait(0.5)
-
-                -- Jika Cooldown terdeteksi di UI Money
-                if IsOnCooldown() then
-                    warn("⚠️ Voidline: Money Limit! Respawning...")
-                    hum.Jump = true -- Lompat biar script spawn ulang
-                    task.wait(1)
-                else
-                    -- Balik ke POS A
-                    VoidlineVehicleTween(POS_A, 2)
-                    task.wait(0.5)
-                end
+                VoidlineVehicleTween(POS_A)
+                task.wait(0.5)
             end)
         end
-        task.wait(0.5)
+        task.wait(0.1)
     end
 end
 
 -- [[ 🎨 UI WINDUI ]] --
 local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()
+
 local Window = WindUI:CreateWindow({
     Title = "VoidlineHub",
     Icon = "house", 
     Author = "Bilzz",
-    Folder = "Voidline_DragDrive",
+    Folder = "Voidline_Configs", -- Folder buat simpan settingan slider/toggle
     Transparent = true,
     Size = UDim2.fromOffset(300, 350),
     Topbar = {
@@ -128,23 +125,104 @@ local Window = WindUI:CreateWindow({
     },
     OpenButton = {
         Enabled = true,
-        Title = "Drag Drive Simulator",
+        Title = "Open Menu",
         Draggable = true,
         Color = ColorSequence.new(Color3.fromRGB(45, 90, 45), Color3.fromRGB(20, 50, 20))
     }
 })
 
-local Tab = Window:Tab({ Title = "🏎️ Auto Farm", Icon = "zap" })
+-- [[ 🏎️ TAB AUTO FARM ]] --
+local Tab = Window:Tab({ 
+    Title = "Auto Farm", 
+    Icon = "zap",
+    Selected = true -- WAJIB: Biar isinya langsung nampil
+})
 
+local EconSection = Tab:Section({ Title = "auto drag race" })
+-- [[ LANJUTIN TOGGLE & SLIDER DI BAWAH SINI ]] --
 Tab:Toggle({
-    Title = "Start Bolak-Balik",
+    Title = "Start Smart Farm",
+Desc = "ini paling gacor si",
     Default = false,
     Callback = function(v)
         genv.VoidlineAutoFarm = v
-        if v then
-            task.spawn(StartVoidlineFarm)
-        end
+        if v then task.spawn(StartVoidlineFarm) end
     end
 })
 
-WindUI:Notify({Title = "Voidline", Content = "Script Ready, Gas Mek!"})
+Tab:Slider({
+    Title = "Speed (KM/H)",
+    Desc = "Pakai senormalnya aja",
+    IsTooltip = true,
+    IsTextbox = false,
+    Step = 1,
+    Value = {
+        Min = 0,
+        Max = 500,
+        Default = 250,
+    },
+    Callback = function(value)
+        genv.VoidlineSpeed = value
+    end
+})
+
+-- [[ 📊 TAB STATS ]] --
+local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "line-chart", Selected = false })
+
+-- Section 1: Economy & Time
+local EconSection = StatsTab:Section({ Title = "Economy Monitor" })
+
+local RunTimeLabel = EconSection:Label({ Title = "Running Time: 00:00:00" })
+local EarningLabel = EconSection:Label({ Title = "Total Earning: $0" })
+local CashLabel = EconSection:Label({ Title = "Current Money: $0" })
+local RPLabel = EconSection:Label({ Title = "Current RP: 0" })
+
+-- Section 2: System Info
+local SystemSection = StatsTab:Section({ Title = "System Info" })
+
+local FpsLabel = SystemSection:Label({ Title = "FPS: 0" })
+local PingLabel = SystemSection:Label({ Title = "Ping: 0ms" })
+local ExecLabel = SystemSection:Label({ Title = "Executor: " .. (identifyexecutor() or "Unknown") })
+
+-- [[ 🔄 STATS REFRESHER LOGIC ]] --
+task.spawn(function()
+    while true do
+        task.wait(1) 
+        
+        -- Ambil data dari PlayerData sesuai yang lu kasih tadi
+        local PlayerData = LP:WaitForChild("PlayerData")
+        local CurrentRP = PlayerData.RPValue.Value 
+        
+        -- 1. LOGIC EARNING (Hanya kalau AutoFarm ON)
+        if genv.VoidlineAutoFarm then
+            if StartRP == 0 then 
+                StartRP = CurrentRP -- Catat RP awal pas klik ON
+                StartTime = tick()
+            end
+            CurrentEarning = CurrentRP - StartRP
+            
+            -- Timer Formatter (Jam:Menit:Detik)
+            local diff = tick() - StartTime
+            local h = math.floor(diff / 3600)
+            local m = math.floor((diff % 3600) / 60)
+            local s = math.floor(diff % 60)
+            
+            RunTimeLabel:SetTitle(string.format("Running Time: %02d:%02d:%02d", h, m, s))
+            EarningLabel:SetTitle("Total Earning: " .. formatRP(CurrentEarning))
+        else
+            -- Reset biar kalau dimatiin terus dinyalain lagi, itungannya mulai dari 0
+            StartRP = 0
+            StartTime = 0
+        end
+        
+        -- 2. UPDATE DISPLAY LABELS
+        CashLabel:SetTitle("Current Money: " .. formatRP(CurrentRP))
+        
+        -- 3. UPDATE SYSTEM INFO (FPS & PING)
+        local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
+        local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+        
+        FpsLabel:SetTitle("FPS: " .. fps)
+        PingLabel:SetTitle("Ping: " .. ping .. "ms")
+    end
+end)

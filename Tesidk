@@ -1,340 +1,254 @@
--- [[ 🛡️ BYPASS ADONIS & NETWORK ]] --
+-- [[ ⚙️ CONFIG ]] --
 local genv = getgenv()
-pcall(function()
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/LynX99-9/komtolmmek2/refs/heads/main/Adonis'))()
-    if game:GetService('CoreGui').RobloxGui:FindFirstChild('CoreScripts/NetworkPause') then
-        game:GetService('CoreGui').RobloxGui['CoreScripts/NetworkPause']:Destroy()
-    end
-end)
-
--- [[ ⚙️ SETTINGS ]] --
 local LP = game:GetService("Players").LocalPlayer
-local RS = game:GetService("ReplicatedStorage")
+local RS = game:GetService("RunService")
 local TS = game:GetService("TweenService")
 
-genv.VoidlineAutoFarm = false
-genv.VoidlineSpeed = 250 -- Default Speed (KM/H)
-local RESET_INTERVAL = 7 * 60 -- 7 Menit dalam detik
-local StartMoney = 0
-local StartTime = 0
+genv.FlySpeed = 250 
+genv.IsFlying = false
+genv.ResetInterval = 600 -- Default 10 Menit (600 detik)
+genv.FlyLoop = nil
+
+local StartRP = 0
+local StartTime = tick()
 local CurrentEarning = 0
-local HITBOX_START = CFrame.new(590.885864, -3.60543203, -1208.06238)
-genv.VoidlineAutoRace = false 
-local EXTREME_LOW_Y = -4.50
-local MOTOR_NAME = "Yamahax-MioSporty"
 
-
--- [[ kordinat drag ]] --
-local POS_A = CFrame.new(80.019, -4.013, -872.866)
-local POS_B = CFrame.new(1300.53, -4.013, -867.006)
-
--- [[ kordinat sentul ]] --
-local SentulCheckpoints = {
-    CFrame.new(681.73, EXTREME_LOW_Y, -1207.62), CFrame.new(1200.25, EXTREME_LOW_Y, -1207.90),
-    CFrame.new(1701.97, EXTREME_LOW_Y, -1073.25), CFrame.new(1723.06, EXTREME_LOW_Y, -562.64),
-    CFrame.new(1848.16, EXTREME_LOW_Y, -204.95), CFrame.new(3237.86, EXTREME_LOW_Y, 768.42),
-    CFrame.new(3430.91, EXTREME_LOW_Y, 993.99), CFrame.new(3191.61, EXTREME_LOW_Y, 1241.81),
-    CFrame.new(2369.18, EXTREME_LOW_Y, 378.68), CFrame.new(1459.46, EXTREME_LOW_Y, -153.81),
-    CFrame.new(1430.42, EXTREME_LOW_Y, -347.64), CFrame.new(1328.40, EXTREME_LOW_Y, -468.94),
-    CFrame.new(-96.96, EXTREME_LOW_Y, -515.90), CFrame.new(-249.54, EXTREME_LOW_Y, -646.09),
-    CFrame.new(-404.35, EXTREME_LOW_Y, -984.11), CFrame.new(-546.41, EXTREME_LOW_Y, -979.99),
-    CFrame.new(-1669.74, EXTREME_LOW_Y, -761.15), CFrame.new(-1795.42, EXTREME_LOW_Y, -780.42),
-    CFrame.new(-1845.05, EXTREME_LOW_Y, -959.68), CFrame.new(-1684.81, EXTREME_LOW_Y, -1189.43),
-    CFrame.new(-1200.07, EXTREME_LOW_Y, -1208.09),CFrame.new(681.73, EXTREME_LOW_Y, -1207.62)
-}
--- [[ 💰 FUNGSI FORMAT RP ]] --
--- Fungsi ini buat bikin angka jadi "Rp 100,000,000"
+-- [[ 💰 FORMAT RP ]] --
 local function formatRP(p2)
-    local v3, v4, v5 = string.match(tostring(p2), "^([^%d]*%d)(%d*)(.-)$")
-    if v3 and (v4 and v5) then
-        return "Rp " .. v3 .. v4:reverse():gsub("(%d%d%d)", "%1,"):reverse() .. v5
-    else
-        return "Rp " .. tostring(p2)
-    end
+    local s = tostring(math.floor(p2))
+    return "Rp " .. s:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
 end
 
--- [[ 🚀 UNIVERSAL QUADRA TWEEN ]] --
-local function VoidlineTween(targetCFrame)
-    local char = LP.Character
-    local hum = char and char:FindFirstChild("Humanoid")
-    local car = hum and hum.SeatPart and hum.SeatPart.Parent
-    if not car then return end
+-- [[ 🚀 VELOCITY ENGINE (FORCE SPEED) ]] --
+local function ToggleSpeedForce(state)
+    if genv.FlyLoop then genv.FlyLoop:Disconnect() genv.FlyLoop = nil end
 
-    local distance = (car:GetPivot().p - targetCFrame.p).Magnitude
-    local duration = distance / (genv.VoidlineSpeed / 1.5)
-    
-    local tweenValue = Instance.new("CFrameValue")
-    tweenValue.Value = car:GetPivot()
-    
-    local connection = tweenValue.Changed:Connect(function()
-        if car and car.Parent then
-            local cur = tweenValue.Value
-            car:PivotTo(CFrame.new(cur.X, LOW_Y, cur.Z) * cur.Rotation)
-        end
-    end)
-    
-    local tween = TS:Create(tweenValue, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Value = targetCFrame})
-    workspace.Gravity = 0
-    tween:Play()
-    tween.Completed:Wait()
-    
-    connection:Disconnect()
-    tweenValue:Destroy()
-    workspace.Gravity = 196.2
-end
+    if state then
+        workspace.Gravity = 0
+        local lastReset = tick()
+        
+        genv.FlyLoop = RS.Heartbeat:Connect(function()
+            -- Logic Auto Reset
+            if tick() - lastReset >= genv.ResetInterval then
+                print("🌑 Voidline: Resetting Time...")
+                lastReset = tick()
+                -- Masukin logic reset motor di sini kalau perlu
+            end
 
--- [[ 🏎️ MAIN AUTO RACE ]] --
-local function StartAutoRace()
-    while genv.VoidlineAutoRace do
-        pcall(function()
-            local char = LP.Character or LP.CharacterAdded:Wait()
-            local hum = char:WaitForChild("Humanoid")
-            local hrp = char:WaitForChild("HumanoidRootPart")
-            local myMotor = nil
-
-            -- 1. VALIDASI MOTOR (Tetap di motor atau Spawn Baru)
-            if hum.SeatPart and (hum.SeatPart.Parent.Name:find("blog827383") or hum.SeatPart.Parent.Name:find("Montors")) then
-                myMotor = hum.SeatPart.Parent
-                myMotor:PivotTo(HITBOX_START) -- Force Teleport Motor ke Start
-                task.wait(0.5)
-            else
-                hrp.CFrame = HITBOX_START
-                task.wait(1)
-                RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
-                task.wait(3)
-                for _, v in pairs(workspace:GetChildren()) do
-                    if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
-                        myMotor = v
-                        hrp.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 2, 0)
-                        task.wait(0.5)
-                        fireproximityprompt(v.DriveSeat:FindFirstChildOfClass("ProximityPrompt"))
-                        break
+            local char = LP.Character
+            local seat = char and char:FindFirstChild("Humanoid") and char.Humanoid.SeatPart
+            
+            if seat and seat.Parent then
+                local root = seat
+                local velocityVector = root.CFrame.LookVector * (genv.FlySpeed * 0.28)
+                
+                for _, part in pairs(seat.Parent:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.AssemblyLinearVelocity = velocityVector
+                        part.CanCollide = false 
                     end
                 end
             end
-            
-            -- 2. PREP DELAY (20s)
-            task.wait(20)
-
-            -- 3. FIRE CLICKDETECTOR (Cari yang terbaru di motor lu)
-            if myMotor then
-                local cd = myMotor:FindFirstChild("ClickDetector", true)
-                if cd then fireclickdetector(cd) end
-            end
-
-            -- 4. RACE DELAY (16s)
-            task.wait(16)
-
-            -- 5. RACING EXECUTION
-            if myMotor and hum.SeatPart then
-                workspace.Gravity = 0
-                for _, cp in ipairs(SentulCheckpoints) do
-                    if not genv.VoidlineAutoRace then break end
-                    tweenToPosition(myMotor, cp)
-                end
-                workspace.Gravity = 196.2
-                
-                -- Force balik ke Start setelah Checkpoint terakhir
-                task.wait(1)
-                myMotor:PivotTo(HITBOX_START)
-            end
-
-            task.wait(2) -- Cooldown antar ronde
         end)
-        if not genv.VoidlineAutoRace then break end
+    else
+        workspace.Gravity = 196.2
+        if genv.FlyLoop then genv.FlyLoop:Disconnect() genv.FlyLoop = nil end
     end
 end
-
-
--- [[ 🏎️ LOGIC: AUTO DRAG ]] --
-local function StartVoidlineFarm()
-    local lastReset = tick()
-
-    while genv.VoidlineAutoFarm do
-        local char = LP.Character
-        local hum = char:WaitForChild("Humanoid")
-        local hrp = char:WaitForChild("HumanoidRootPart")
-
-        -- 1. CEK TIMER 7 MENIT ATAU LAGI TURUN MOTOR
-        if tick() - lastReset >= RESET_INTERVAL or not hum.SeatPart then
-            if hum.SeatPart then hum.Jump = true task.wait(0.5) end
-            
-            RS.SpawnCarEvents.SpawnCar:FireServer(MOTOR_NAME)
-            task.wait(1.5)
-            
-            for _, v in pairs(workspace:GetChildren()) do
-                if (v.Name:find("blog827383") or v.Name:find("Montors")) and v:FindFirstChild("DriveSeat") then
-                    hrp.CFrame = v.DriveSeat.CFrame * CFrame.new(0, 1.5, 0)
-                    task.wait(0.3)
-                    fireproximityprompt(v.DriveSeat:FindFirstChildOfClass("ProximityPrompt"))
-                    break
-                end
-            end
-            lastReset = tick() -- Reset timer
-            task.wait(1)
-        end
-
-        -- 2. TWEEN BOLAK-BALIK
-        if hum.SeatPart then
-            pcall(function()
-                VoidlineVehicleTween(POS_B)
-                task.wait(0.5)
-                VoidlineVehicleTween(POS_A)
-                task.wait(0.5)
-            end)
-        end
-        task.wait(0.1)
-    end
-end
-
 
 -- [[ 🎨 UI WINDUI ]] --
 local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()
-
 local Window = WindUI:CreateWindow({
     Title = "VoidlineHub",
-    Icon = "house", 
     Author = "Bilzz",
-    Folder = "Voidline_Configs", -- Folder buat simpan settingan slider/toggle
-    Transparent = true,
-    Size = UDim2.fromOffset(300, 350),
-    Topbar = {
-        Height = 45,
-        ButtonsType = "Mac",
-    },
-    OpenButton = {
-        Enabled = true,
-        Title = "Drag drive simulator",
-        Draggable = true,
-        Color = ColorSequence.new(Color3.fromRGB(45, 90, 45), Color3.fromRGB(20, 50, 20))
-    }
+    Size = UDim2.fromOffset(450, 420)
 })
 
--- [[ 🏎️ TAB AUTO FARM ]] --
-local Tab = Window:Tab({ 
-    Title = "Auto Farm", 
-    Icon = "zap",
-    Selected = true -- WAJIB: Biar isinya langsung nampil
-})
+-- [[ 🏎️ TAB MAIN ]] --
+local MainTab = Window:Tab({ Title = "Main", Icon = "zap", Selected = true })
 
-local EconSection = Tab:Section({ Title = "auto drag race" })
--- [[ LANJUTIN TOGGLE & SLIDER DI BAWAH SINI ]] --
-Tab:Toggle({
-    Title = "Start Smart Farm",
-Desc = "ini paling gacor si",
-    Default = false,
+MainTab:Toggle({
+    Title = "Force Velocity (Auto Farm)",
     Callback = function(v)
-        genv.VoidlineAutoFarm = v
-        if v then task.spawn(StartVoidlineFarm) end
+        genv.IsFlying = v
+        ToggleSpeedForce(v)
     end
 })
 
-Tab:Slider({
-    Title = "Speed (KM/H)",
-    Desc = "Pakai senormalnya aja",
-    IsTooltip = true,
-    IsTextbox = true,
-    Step = 1,
-    Value = {
-        Min = 0,
-        Max = 500,
-        Default = 250,
-    },
-    Callback = function(value)
-        genv.VoidlineSpeed = value
-    end
+MainTab:Slider({
+    Title = "Force Speed Control",
+    Value = { Min = 0, Max = 100000, Default = 250 },
+    Callback = function(v) genv.FlySpeed = v end
 })
 
-Tab:Toggle({
-    Title = "Enable Auto Race",
-    Desc = "semua sudah auto",
+MainTab:Slider({
+    Title = "Reset Interval (Minutes)",
+    Desc = "Atur waktu reset (10 - 60 Menit)",
+    Value = { Min = 10, Max = 60, Default = 10 },
     Callback = function(v)
-        genv.VoidlineAutoRace = v
-        if v then task.spawn(StartAutoRace) else workspace.Gravity = 196.2 end
+        genv.ResetInterval = v * 60 -- Konversi ke detik
     end
-})
-
-Tab:Slider({
-    Title = "Speed Control (KM/H)",
-    Desc = "400 normal",
-    Value = { Min = 50, Max = 500, Default = 250 },
-    Callback = function(v) genv.VoidlineSpeed = v end
 })
 
 -- [[ 📊 TAB DASHBOARD ]] --
-local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "trending-up", Selected = false })
+local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "trending-up" })
 
-local EconSection = StatsTab:Section({ Title = "info ingame" })
--- 1. BUTTON RUNNING TIME
-local TimeBtn = StatsTab:Button({
-    Title = "Running Time",
-    Desc = "00:00:00",
-    Icon = "clock",
-    Callback = function() 
-        
-    end
-})
+local TimeBtn = StatsTab:Button({ Title = "Running Time", Desc = "00:00:00", Icon = "clock" })
+local EarningBtn = StatsTab:Button({ Title = "Total Earning", Desc = "Rp 0", Icon = "banknote" })
+local MoneyBtn = StatsTab:Button({ Title = "Current Money", Desc = "Rp 0", Icon = "wallet" })
+local SysBtn = StatsTab:Button({ Title = "System Status", Desc = "FPS: 0 | Ping: 0ms", Icon = "monitor" })
 
--- 2. BUTTON TOTAL EARNING
-local EarningBtn = StatsTab:Button({
-    Title = "Total Earning",
-    Desc = "Rp 0",
-    Icon = "banknote",
-    Callback = function() 
-        
-    end
-})
-
--- 3. BUTTON CURRENT MONEY
-local MoneyBtn = StatsTab:Button({
-    Title = "Current Money",
-    Desc = "Rp 0",
-    Icon = "wallet",
-    Callback = function()
-    end
-})
-
-local EconSection = StatsTab:Section({ Title = "info " })
--- 4. BUTTON SYSTEM INFO (FPS/PING)
-local SysBtn = StatsTab:Button({
-    Title = "System Status",
-    Desc = "FPS: 0 | Ping: 0ms",
-    Icon = "monitor",
-    Callback = function() 
-        WindUI:Notify({Title = "Voidline", Content = "Status koneksi & hardware."}) 
-    end
-})
-
--- [[ 🔄 STATS REFRESHER LOGIC ]] --
+-- [[ 🔄 REFRESHER LOGIC ]] --
 task.spawn(function()
     while true do
-        task.wait(1) 
+        task.wait(1)
         pcall(function()
-            local PlayerData = LP:WaitForChild("PlayerData", 5)
-            local CurrentRP = PlayerData.RPValue.Value 
-            
-            -- 1. LOGIC EARNING
-            if genv.VoidlineAutoFarm then
-                if StartRP == 0 then 
-                    StartRP = CurrentRP
-                    StartTime = tick()
+            local PlayerData = LP:FindFirstChild("PlayerData")
+            if PlayerData then
+                local CurrentRP = PlayerData.RPValue.Value
+                
+                if genv.IsFlying then
+                    if StartRP == 0 then StartRP = CurrentRP StartTime = tick() end
+                    CurrentEarning = CurrentRP - StartRP
+                    
+                    local diff = tick() - StartTime
+                    local h, m, s = math.floor(diff/3600), math.floor((diff%3600)/60), math.floor(diff%60)
+                    
+                    TimeBtn:SetDesc(string.format("%02d:%02d:%02d", h, m, s))
+                    EarningBtn:SetDesc(formatRP(CurrentEarning))
                 end
-                CurrentEarning = CurrentRP - StartRP
-                
-                local diff = tick() - StartTime
-                local h, m, s = math.floor(diff/3600), math.floor((diff%3600)/60), math.floor(diff%60)
-                
-                -- UPDATE BUTTON DESC (Tempat naruh angkanya)
-                TimeBtn:SetDesc(string.format("%02d:%02d:%02d", h, m, s))
-                EarningBtn:SetDesc(formatRP(CurrentEarning))
-            else
-                StartRP = 0
+                MoneyBtn:SetDesc(formatRP(CurrentRP))
             end
             
-            -- 2. UPDATE MONEY DESC
-            MoneyBtn:SetDesc(formatRP(CurrentRP))
+            local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
+            local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+            SysBtn:SetDesc("FPS: " .. fps .. " | Ping: " .. ping .. "ms")
+        end)
+    end
+end)
+
+-- [[ ⚙️ CONFIG ]] --
+local genv = getgenv()
+local LP = game:GetService("Players").LocalPlayer
+local RS = game:GetService("RunService")
+local TS = game:GetService("TweenService")
+
+genv.FlySpeed = 250 
+genv.IsFlying = false
+genv.ResetInterval = 600 -- Default 10 Menit (600 detik)
+genv.FlyLoop = nil
+
+local StartRP = 0
+local StartTime = tick()
+local CurrentEarning = 0
+
+-- [[ 💰 FORMAT RP ]] --
+local function formatRP(p2)
+    local s = tostring(math.floor(p2))
+    return "Rp " .. s:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+end
+
+-- [[ 🚀 VELOCITY ENGINE (FORCE SPEED) ]] --
+local function ToggleSpeedForce(state)
+    if genv.FlyLoop then genv.FlyLoop:Disconnect() genv.FlyLoop = nil end
+
+    if state then
+        workspace.Gravity = 0
+        local lastReset = tick()
+        
+        genv.FlyLoop = RS.Heartbeat:Connect(function()
+            -- Logic Auto Reset
+            if tick() - lastReset >= genv.ResetInterval then
+                print("🌑 Voidline: Resetting Time...")
+                lastReset = tick()
+                -- Masukin logic reset motor di sini kalau perlu
+            end
+
+            local char = LP.Character
+            local seat = char and char:FindFirstChild("Humanoid") and char.Humanoid.SeatPart
             
-            -- 3. UPDATE SYSTEM DESC
+            if seat and seat.Parent then
+                local root = seat
+                local velocityVector = root.CFrame.LookVector * (genv.FlySpeed * 0.28)
+                
+                for _, part in pairs(seat.Parent:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.AssemblyLinearVelocity = velocityVector
+                        part.CanCollide = false 
+                    end
+                end
+            end
+        end)
+    else
+        workspace.Gravity = 196.2
+        if genv.FlyLoop then genv.FlyLoop:Disconnect() genv.FlyLoop = nil end
+    end
+end
+
+-- [[ 🎨 UI WINDUI ]] --
+local WindUI = loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua'))()
+local Window = WindUI:CreateWindow({
+    Title = "VoidlineHub",
+    Author = "Bilzz",
+    Size = UDim2.fromOffset(450, 420)
+})
+
+-- [[ 🏎️ TAB MAIN ]] --
+local MainTab = Window:Tab({ Title = "Main", Icon = "zap", Selected = true })
+
+MainTab:Toggle({
+    Title = "Force Velocity (Auto Farm)",
+    Callback = function(v)
+        genv.IsFlying = v
+        ToggleSpeedForce(v)
+    end
+})
+
+MainTab:Slider({
+    Title = "Force Speed Control",
+    Value = { Min = 0, Max = 100000, Default = 250 },
+    Callback = function(v) genv.FlySpeed = v end
+})
+
+MainTab:Slider({
+    Title = "Reset Interval (Minutes)",
+    Desc = "Atur waktu reset (10 - 60 Menit)",
+    Value = { Min = 10, Max = 60, Default = 10 },
+    Callback = function(v)
+        genv.ResetInterval = v * 60 -- Konversi ke detik
+    end
+})
+
+-- [[ 📊 TAB DASHBOARD ]] --
+local StatsTab = Window:Tab({ Title = "Dashboard", Icon = "trending-up" })
+
+local TimeBtn = StatsTab:Button({ Title = "Running Time", Desc = "00:00:00", Icon = "clock" })
+local EarningBtn = StatsTab:Button({ Title = "Total Earning", Desc = "Rp 0", Icon = "banknote" })
+local MoneyBtn = StatsTab:Button({ Title = "Current Money", Desc = "Rp 0", Icon = "wallet" })
+local SysBtn = StatsTab:Button({ Title = "System Status", Desc = "FPS: 0 | Ping: 0ms", Icon = "monitor" })
+
+-- [[ 🔄 REFRESHER LOGIC ]] --
+task.spawn(function()
+    while true do
+        task.wait(1)
+        pcall(function()
+            local PlayerData = LP:FindFirstChild("PlayerData")
+            if PlayerData then
+                local CurrentRP = PlayerData.RPValue.Value
+                
+                if genv.IsFlying then
+                    if StartRP == 0 then StartRP = CurrentRP StartTime = tick() end
+                    CurrentEarning = CurrentRP - StartRP
+                    
+                    local diff = tick() - StartTime
+                    local h, m, s = math.floor(diff/3600), math.floor((diff%3600)/60), math.floor(diff%60)
+                    
+                    TimeBtn:SetDesc(string.format("%02d:%02d:%02d", h, m, s))
+                    EarningBtn:SetDesc(formatRP(CurrentEarning))
+                end
+                MoneyBtn:SetDesc(formatRP(CurrentRP))
+            end
+            
             local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
             local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
             SysBtn:SetDesc("FPS: " .. fps .. " | Ping: " .. ping .. "ms")
